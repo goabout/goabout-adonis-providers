@@ -1,0 +1,61 @@
+{
+  "name": "Goabout-Adonis-Providers",
+  "version": "1.0.0",
+  "description": "A set of adonis providers for various GoAbout apps",
+  "author": "Artem Golovin <artem.golovin@goabout.com>",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "dev": "gulp server",
+    "start": "node server.js",
+    "lint": "eslint .; exit 0",
+    "test": "gulp test",
+    "autotest": "gulp autotest"
+  },
+  "dependencies": {
+    "co": "^4.6.0",
+    "co-each": "^0.1.0",
+    "halson": "^3.0.0",
+    "lodash": "^4.17.4",
+    "mixpanel": "^0.7.0",
+    "moment": "^2.18.1",
+    "node-exceptions": "^2.0.1",
+    "node-res": "3.0.1",
+    "raven": "^1.2.1",
+    "request": "^2.81.0",
+    "winston": "^2.3.1"
+  },
+  "standard": {
+    "global": [
+      "use",
+      "make"
+    ]
+  },
+  "devDependencies": {
+    "adonis-fold": "^3.0.3",
+    "adonis-validation-provider": "^3.0.5",
+    "babel-eslint": "^7.2.3",
+    "chai": "^3.5.0",
+    "chai-generator": "^2.1.0",
+    "co-mocha": "^1.2.0",
+    "eslint": "^3.19.0",
+    "eslint-find-rules": "^1.14.3",
+    "eslint-plugin-import": "^2.2.0",
+    "goabout-eslint-config": "git+https://github.com/goabout/goabout-eslint-config.git",
+    "gulp": "^3.9.1",
+    "gulp-load-plugins": "^1.5.0",
+    "gulp-mocha": "^4.3.1",
+    "gulp-nodemon": "^2.2.1",
+    "gulp-spawn": "^0.4.0",
+    "gulp-sync": "^0.1.4",
+    "gulp-watch": "^4.3.11",
+    "mocha": "^3.3.0",
+    "mocha-clean": "^1.0.0",
+    "nodemon": "^1.11.0",
+    "should": "^11.2.1",
+    "sinon": "^2.2.0",
+    "sinon-as-promised": "4.0.2",
+    "supertest": "^3.0.0"
+  },
+  "repository": "git@github.com:goabout/goabout-adonis-providers.git"
+}

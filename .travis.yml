@@ -1,0 +1,13 @@
+language: node_js
+node_js: 7.10.0
+
+script: scripts/_integrate.sh
+
+cache:
+  apt: true
+
+notifications:
+  email: false
+  #notifications-ovelo
+  slack:
+    secure: pG4cbP30I9evpbS1ZiX07jgz6wqsnYZMFBH/egvQYLD7rWZAPSLcFA2GFZ7o+IKYFewfVh8j7jLUFv7z4dxDkxPvoAzfOiv8tLmHatsYeglHeyiQMIoN3/c8FEhNSURUUkBuVhE4ecofmcJLqQN3oWo0VPuwHXzPtNUKTFOndVgiXG4ERMr8p6hW+GG9rKiNkX7k+QUfVbj9QbpRC5SyjhQgf6Nl9NOZrQ6KsAcj+ZlIOzuWLJnqC4i0+BYXz5VgsKPKJj4TYEaDpyt8F2DuhWaVHb+MTFtwt7JiGvVWyfvYF9+9WX9krMIKoacbvVbpffGOAcgYxnUtOJ7x1nU348abSET5LvZE0xacvHWQpQIVNlbasPDzk6uSL7I65jxD4xl41kptxYKQ1dVn1YqrMfwMbvpkyLgkvvQOfUcaidGZmw36F+a2Zh9BFdcfXBppeJmReBjJSFxMZojLK8x6NamfiXL9pWnuyOKQ4Zj4EhgZFAb7nSdiaNhKgxJKTd1dEpCmHBYDXOVdUn352E7sh0KR2h7mWE8vXDcGCFlKT/Bl4m+ro/dWSVmiLssqCLTFtn6L5pGlhg920SH8dQN5yRzDXMjseEgawWsLL9SC+SczXUlVRc/IidFBNZ4qkpAYfrXxi95bVSd53w3TNKV1VlzkKhwP/rAxd5B7EwicU/Q=
