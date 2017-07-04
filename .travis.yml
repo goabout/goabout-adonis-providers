@@ -4,7 +4,9 @@ node_js: 7.10.0
 script: scripts/_integrate.sh
 
 cache:
-  apt: true
+  yarn: true
+  directories:
+    - "node_modules"
 
 notifications:
   email: false

@@ -7,7 +7,6 @@ It includes:
 * Promisified Request library
 * Raven
 * Mixpanel
-* A few custom-made validations
 * Utils such as forEach for generator functions
 
 ### Requirements
