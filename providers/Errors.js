@@ -1,5 +1,6 @@
 const ServiceProvider = require('adonis-fold').ServiceProvider // eslint-disable-line
 const NE = require('node-exceptions')
+const _ = require('lodash')
 
 class BadRequest extends NE.LogicalException {
   constructor(errorCode, details) {
@@ -46,12 +47,28 @@ class Validation extends NE.LogicalException {
   }
 }
 
+class PassThrough extends NE.LogicalException {
+  constructor(statusCode, body) {
+    super(body.code, statusCode)
+    Object.assign(this, _.omit(body, ['code']))
+  }
+}
+
+class NoResponse extends NE.LogicalException {
+  constructor(errorCode, details) {
+    super(errorCode || 'NO_RESPONSE_FROM_SIDE_PARTY', 500)
+    this.details = details
+  }
+}
+
 const errors = {
   BadRequest,
   Validation,
   NotFound,
   Unauthorized,
-  Denied
+  Denied,
+  PassThrough,
+  NoResponse
 }
 
 
