@@ -22,6 +22,10 @@ beforeEach(function* () {
       return this.vars[key] || undefined
     }
   }
+
+  v.Raven = {
+    captureException: sandbox.stub()
+  }
 })
 
 afterEach(function* () {
