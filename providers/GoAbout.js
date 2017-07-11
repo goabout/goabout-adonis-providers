@@ -150,6 +150,24 @@ class GoAbout {
     return _.pick(response, ['statusCode', 'body', 'halBody', 'headers'])
   }
 
+  generateBookingRequest({ token, params, productId }) {
+    return {
+      method: 'POST',
+      token,
+      body: {
+        products: [{
+          productHref: `https://api.goabout.com/product/${productId}`,
+          properties: {}
+        }],
+        userProperties: {
+          email: params.email,
+          phonenumber: params.phoneNumber, // not the small 'n' in 'number'
+          name: params.name,
+        }
+      }
+    }
+  }
+
 }
 
 class GoAboutProvider extends ServiceProvider {
