@@ -49,9 +49,9 @@ class Validation extends NE.LogicalException {
 
 class PassThrough extends NE.LogicalException {
   constructor(statusCode, body) {
-    super((body && body.code) ? body.code : 'E_UNKNOWN_ERROR', statusCode)
-    this.details = body.message // Because GoAbout sends details as "Message"
-    Object.assign(this, _.omit(body, ['code', 'message']))
+    super((body && body.code) ? body.code : 'E_UNKNOWN_ERROR', statusCode || 500)
+    this.details = (body && body.message) ? body.message : undefined // Because GoAbout sends details as "Message"
+    Object.assign(this, _.omit(body || {}, ['message']))
   }
 }
 

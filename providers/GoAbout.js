@@ -141,7 +141,7 @@ class GoAbout {
     if (['4', '5'].includes(response.statusCode.toString()[0])) {
       this.Log.info(`Failed ${relation} with answer ${JSON.stringify(response.body)}`)
 
-      const error = new this.Errors.PassThrough(response.statusCode, response.body)
+      const error = new this.Errors.PassThrough(response.statusCode, Object.assign(response.body, { code: 'E_GOABOUT_API_FAILED' }))
       this.Raven.captureException(error)
       throw error
     }

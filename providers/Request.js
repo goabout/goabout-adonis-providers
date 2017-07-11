@@ -49,7 +49,7 @@ class Request {
           return reject(error)
         }
 
-        if (response.headers && response.headers['content-type'].includes('hal+json')) response.halBody = halson(response.body)
+        if (response.headers && response.headers['content-type'] && response.headers['content-type'].includes('hal+json')) response.halBody = halson(response.body)
 
         return resolve(response)
       })
