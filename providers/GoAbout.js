@@ -32,6 +32,34 @@ class GoAbout {
     return response.halBody
   }
 
+  * getUser({ token }) {
+    const api = yield this.getApi({ token })
+    return api.getEmbed('http://rels.goabout.com/authenticated-user')
+  }
+
+  * getUnfinishedBookings({ token }) {
+    const user = yield this.getUser({ token })
+
+    const bookingsResource = yield this.request({
+      resource: user,
+      method: 'GET',
+      relation: 'http://rels.goabout.com/user-bookings',
+      query: {
+        eventType: 'tFinished', // Temp event until 500s are fixed on GoAbout backend
+        eventData: 0
+      },
+      token
+    })
+
+    const embedResources = bookingsResource.halBody.listEmbedRels()
+    const bookings = embedResources.includes('item') ? bookingsResource.halBody.getEmbed('item') : []
+
+    this.Log.info(`Got user unfinished bookings ${JSON.stringify(bookings)}`)
+
+    return bookings
+  }
+
+  // Deprecated, use getUser instead
   * checkTokenAndReturnUser(token) {
     let response = null
 
@@ -104,31 +132,34 @@ class GoAbout {
     })
   }
 
-  * request({ resource, method, relation, body, token }) {
+  * request({ resource, method, relation, body, token, query }) {
     let response = null
 
     // If no resource provided, then use root of the api
     let resourceToCall = !resource ? yield this.getApi({ token }) : resource
     if (!resourceToCall.getLink) resourceToCall = halson(resourceToCall)
 
-    let orderLink = resourceToCall.getLink(relation)
-    orderLink = orderLink ? orderLink.href : undefined
-    if (!orderLink || !orderLink.length) throw new this.Errors.BadRequest()
+    let requestUrl = resourceToCall.getLink(relation)
+    requestUrl = requestUrl ? requestUrl.href : undefined
+    if (!requestUrl || !requestUrl.length) throw new this.Errors.BadRequest()
 
     // Remove all link params
     // TODO Support for link params
-    orderLink = orderLink.replace(/{\?.*}/g, '')
+    requestUrl = requestUrl.replace(/{\?.*}/g, '')
+
+    this.Log.info(`${method} to ${requestUrl} with params ${JSON.stringify(body) || {}} and query ${JSON.stringify(query) || {}}`)
 
     try {
       response = yield this.$request.send({
-        url: orderLink,
+        url: requestUrl,
         method,
         json: true,
         headers: {
           Authorization: `Bearer ${token}`,
           Accept: 'application/hal+json,application/json'
         },
-        body: method !== 'GET' ? body : undefined
+        body: method !== 'GET' ? body : undefined,
+        qs: query || undefined
       })
     } catch (err) {
       this.Log.error(`Error while requesting ${relation} with body ${body}`)
