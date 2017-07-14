@@ -55,6 +55,13 @@ class PassThrough extends NE.LogicalException {
   }
 }
 
+class Raven extends NE.LogicalException {
+  constructor(data) {
+    super(data.type || 'E_INTERNAL_ERROR', 500)
+    Object.assign(this, _.omit(data, ['type']))
+  }
+}
+
 class NoResponse extends NE.LogicalException {
   constructor(errorCode, details) {
     super(errorCode || 'NO_RESPONSE_FROM_SIDE_PARTY', 500)
@@ -69,7 +76,8 @@ const errors = {
   Unauthorized,
   Denied,
   PassThrough,
-  NoResponse
+  NoResponse,
+  Raven
 }
 
 

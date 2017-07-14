@@ -10,24 +10,16 @@ class GoAbout {
     this.Errors = Errors
     this.Log = Log
     this.Raven = Raven
+
+    this.FINISHED_EVENT = 'finished'
+    this.OVELO_USAGE_ID = 'OveloUsageId'
   }
 
   * getApi({ token }) {
-    let response = null
-
-    try {
-      response = yield this.$request.send({
-        url: this.Env.get('GOABOUT_API'),
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      })
-    } catch (err) {
-      this.Log.error('Error while requesting GoAbout API')
-      this.Raven.captureException(err)
-      throw new this.Errors.NoResponse('E_GOABOUT_API_IS_DOWN')
-    }
+    const response = yield this.send({
+      url: this.Env.get('GOABOUT_API'),
+      token
+    })
 
     return response.halBody
   }
@@ -35,6 +27,53 @@ class GoAbout {
   * getUser({ token }) {
     const api = yield this.getApi({ token })
     return api.getEmbed('http://rels.goabout.com/authenticated-user')
+  }
+
+  * getBooking({ url, token, withEvents }) {
+    const bookingResponse = yield this.send({ url, token })
+    const booking = bookingResponse.halBody
+
+    this.Log.debug(`Getting booking ${url}`)
+
+    if (withEvents) {
+      const eventsLink = booking.getLink('http://rels.goabout.com/booking-events').href
+      const eventsResponse = yield this.send({ url: eventsLink, token })
+      booking.events = eventsResponse.halBody.events
+    }
+
+    this.Log.debug(`Got booking ${JSON.stringify(booking)}`)
+
+
+    return booking
+  }
+
+  * setEvent({ booking, token, eventType, eventData }) {
+    const requestResult = yield this.request({
+      resource: booking,
+      method: 'POST',
+      relation: 'http://rels.goabout.com/booking-events',
+      token,
+      body: {
+        type: eventType,
+        data: eventData
+      }
+    })
+
+    return requestResult
+  }
+
+  // Make sure booking is received with events
+  getOveloUsageId({ booking, bookingHref }) {
+    const oveloUsageEvent = _.find(booking.events, { type: 'oveloUsageId' })
+    const oveloUsageId = oveloUsageEvent ? oveloUsageEvent.data : null
+
+    // Throw error if not found
+    if (!oveloUsageId) {
+      this.Raven.captureException(new this.Errors.Raven({ type: 'E_NO_USAGE_ID_FOUND', details: `oveloUsageId event for ${bookingHref} was not found` }))
+      throw new this.Errors.BadRequest('E_NO_USAGE_ID_FOUND', 'Something went wrong while finishing your booking!')
+    }
+
+    return oveloUsageId
   }
 
   * getUnfinishedBookings({ token }) {
@@ -45,7 +84,7 @@ class GoAbout {
       method: 'GET',
       relation: 'http://rels.goabout.com/user-bookings',
       query: {
-        eventType: 'tFinished', // Temp event until 500s are fixed on GoAbout backend
+        eventType: this.FINISHED_EVENT, // Temp event until 500s are fixed on GoAbout backend
         eventData: 0
       },
       token
@@ -104,12 +143,9 @@ class GoAbout {
     let response = null
 
     try {
-      response = yield this.$request.send({
+      response = yield this.send({
         url: goaboutUser.links.subscriptions,
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+        token
       })
     } catch (err) {
       this.Log.error(err)
@@ -133,8 +169,6 @@ class GoAbout {
   }
 
   * request({ resource, method, relation, body, token, query }) {
-    let response = null
-
     // If no resource provided, then use root of the api
     let resourceToCall = !resource ? yield this.getApi({ token }) : resource
     if (!resourceToCall.getLink) resourceToCall = halson(resourceToCall)
@@ -147,38 +181,58 @@ class GoAbout {
     // TODO Support for link params
     requestUrl = requestUrl.replace(/{\?.*}/g, '')
 
-    this.Log.info(`${method} to ${requestUrl} with params ${JSON.stringify(body) || {}} and query ${JSON.stringify(query) || {}}`)
+    const response = yield this.send({
+      url: requestUrl,
+      method,
+      body,
+      token,
+      query
+    })
+
+    // Filter all the extra stuff from the request obj
+    return _.pick(response, ['statusCode', 'body', 'halBody', 'headers'])
+  }
+
+  // Internal method, try to avoid using unless necessary
+  * send({ url, method, token, body, query }) {
+    let response = null
+    if (!method) method = 'GET' // eslint-disable-line
+
+    this.Log.info(`${method} to ${url} with body ${JSON.stringify(body || {})} and query ${JSON.stringify(query || {})}`)
 
     try {
       response = yield this.$request.send({
-        url: requestUrl,
+        url,
         method,
         json: true,
         headers: {
           Authorization: `Bearer ${token}`,
           Accept: 'application/hal+json,application/json'
         },
-        body: method !== 'GET' ? body : undefined,
+        body: (method !== 'GET' && body) ? body : undefined,
         qs: query || undefined
       })
     } catch (err) {
-      this.Log.error(`Error while requesting ${relation} with body ${body}`)
+      this.Log.error(`Error while requesting ${url} with body ${JSON.stringify(body || {})} and query ${JSON.stringify(query || {})}`)
       this.Log.error(err)
       this.Raven.captureException(err)
       throw new this.Errors.NoResponse('E_GOABOUT_API_IS_DOWN')
     }
 
-    // Throw error is result is 4xx or 5xx
+    this.throwErrorIfFailingRequest({ response, url })
+
+    return response
+  }
+
+  // Throw error is result is 4xx or 5xx
+  throwErrorIfFailingRequest({ response, url }) {
     if (['4', '5'].includes(response.statusCode.toString()[0])) {
-      this.Log.info(`Failed ${relation} with answer ${JSON.stringify(response.body)}`)
+      this.Log.info(`Failed ${url} with answer ${JSON.stringify(response.body)}`)
 
       const error = new this.Errors.PassThrough(response.statusCode, Object.assign(response.body, { code: 'E_GOABOUT_API_FAILED' }))
       this.Raven.captureException(error)
       throw error
     }
-
-    // Filter all the extra stuff from the request obj
-    return _.pick(response, ['statusCode', 'body', 'halBody', 'headers'])
   }
 
   generateBookingRequest({ token, params, productId }) {
