@@ -2,6 +2,8 @@ const ServiceProvider = require('adonis-fold').ServiceProvider // eslint-disable
 const _ = require('lodash')
 const halson = require('halson')
 
+// TODO Refactor it not to be singleton! So each request will have its own GoAbout instance and hence API (a) is requested only once, (b) no need to pass tokens, (c) it uses Redis and caches expensive things like subscriptions automatically
+// Maybe make Bookings, API roots as class instances as well
 class GoAbout {
 
   constructor(request, Env, Errors, Log, Raven) {
@@ -14,6 +16,54 @@ class GoAbout {
     this.FINISHED_EVENT = 'finished'
     this.OVELO_USAGE_ID = 'OveloUsageId'
   }
+
+  /*
+    Basic methods
+  */
+
+ /*
+  * @name request
+  * @kind function
+  *
+  * @description
+  * Extracts exact link from the resource using passed hal relation and passes the request stuff to the 'send' function
+  *
+  * @param {Halson object} [resource] A resource to call. If not present, goAbout api will be used
+  * @param {String} relation A relation to use
+  * @param {String} [method='GET'] Method to call
+  * @param {String} [token] Token to make a call with
+  * @param {Object} [body] A body to send with
+  * @param {Object} [query] A set of query params to append to url
+
+  * @returns {Response} Gives back a response object containing statusCode, headers, body and halBody when present
+  *
+  * If request did not pass at all or gave back 400/500 errors, then it will throw a error passing statusCode and a body of erorrs. This error can be reused and sent right to the client
+  */
+  * request({ resource, relation, method, body, token, query }) {
+    // If no resource provided, then use root of the api
+    let resourceToCall = !resource ? yield this.getApi({ token }) : resource
+    if (!resourceToCall.getLink) resourceToCall = halson(resourceToCall)
+
+    let requestUrl = resourceToCall.getLink(relation)
+    requestUrl = requestUrl ? requestUrl.href : undefined
+    if (!requestUrl || !requestUrl.length) throw new this.Errors.BadRequest()
+
+    // Remove all link params
+    // TODO Support for link params
+    requestUrl = requestUrl.replace(/{\?.*}/g, '')
+
+    return yield this.send({
+      url: requestUrl,
+      method,
+      body,
+      token,
+      query
+    })
+  }
+
+  /*
+    More specific methods, based on request and send
+  */
 
   * getApi({ token }) {
     const response = yield this.send({
@@ -29,6 +79,28 @@ class GoAbout {
     return api.getEmbed('http://rels.goabout.com/authenticated-user')
   }
 
+  * getUserSubscriptions(goaboutUser, token) {
+    let response = null
+
+    try {
+      response = yield this.send({
+        url: goaboutUser.links.subscriptions,
+        token
+      })
+    } catch (err) {
+      this.Log.error(err)
+      throw new this.Errors.Unauthorized()
+    }
+
+    const subscriptions = response.halBody.getEmbeds('item') || []
+    this.fillSubscriptionsWithIds(subscriptions)
+
+    // this.Log.debug('User has subscriptions')
+    // this.Log.debug(JSON.stringify(subscriptions))
+
+    return subscriptions
+  }
+
   * getBooking({ url, token, withEvents }) {
     const bookingResponse = yield this.send({ url, token })
     const booking = bookingResponse.halBody
@@ -42,7 +114,6 @@ class GoAbout {
     }
 
     this.Log.debug(`Got booking ${JSON.stringify(booking)}`)
-
 
     return booking
   }
@@ -60,20 +131,6 @@ class GoAbout {
     })
 
     return requestResult
-  }
-
-  // Make sure booking is received with events
-  getOveloUsageId({ booking, bookingHref }) {
-    const oveloUsageEvent = _.find(booking.events, { type: 'oveloUsageId' })
-    const oveloUsageId = oveloUsageEvent ? oveloUsageEvent.data : null
-
-    // Throw error if not found
-    if (!oveloUsageId) {
-      this.Raven.captureException(new this.Errors.Raven({ type: 'E_NO_USAGE_ID_FOUND', details: `oveloUsageId event for ${bookingHref} was not found` }))
-      throw new this.Errors.BadRequest('E_NO_USAGE_ID_FOUND', 'Something went wrong while finishing your booking!')
-    }
-
-    return oveloUsageId
   }
 
   * getUnfinishedBookings({ token }) {
@@ -97,6 +154,53 @@ class GoAbout {
 
     return bookings
   }
+
+  /*
+    Helper methods
+  */
+
+  getOveloUsageId({ booking, bookingHref }) {
+    const oveloUsageEvent = _.find(booking.events, { type: 'oveloUsageId' })
+    const oveloUsageId = oveloUsageEvent ? oveloUsageEvent.data : null
+
+    // Throw error if not found
+    if (!oveloUsageId) {
+      this.Raven.captureException(new this.Errors.Raven({ type: 'E_NO_USAGE_ID_FOUND', details: `oveloUsageId event for ${bookingHref} was not found` }))
+      throw new this.Errors.BadRequest('E_NO_USAGE_ID_FOUND', 'Something went wrong while finishing your booking!')
+    }
+
+    return oveloUsageId
+  }
+
+  fillSubscriptionsWithIds(subscriptions) {
+    subscriptions.forEach(subscription => {
+      const splitLink = subscription.productHref.split('/')
+      subscription.subscriptionId = parseInt(splitLink[splitLink.length - 1], 10)
+    })
+  }
+
+  generateBookingRequest({ token, params, productId }) {
+    return {
+      method: 'POST',
+      token,
+      body: {
+        products: [{
+          productHref: `https://api.goabout.com/product/${productId}`,
+          properties: {}
+        }],
+        userProperties: {
+          email: params.email,
+          phonenumber: params.phoneNumber, // not the small 'n' in 'number'
+          name: params.name,
+        }
+      }
+    }
+  }
+
+
+  /*
+    Deprecated methods
+  */
 
   // Deprecated, use getUser instead
   * checkTokenAndReturnUser(token) {
@@ -127,6 +231,7 @@ class GoAbout {
     throw new this.Errors.Unauthorized()
   }
 
+  // Deprecated, use getUser instead
   constructUser(goaboutUser) {
     return {
       email: goaboutUser.email,
@@ -135,120 +240,6 @@ class GoAbout {
         self: goaboutUser.getLink('self').href,
         subscriptions: goaboutUser.getLink('http://rels.goabout.com/subscriptions').href,
         bookings: goaboutUser.getLink('http://rels.goabout.com/user-bookings').href
-      }
-    }
-  }
-
-  * getUserSubscriptions(goaboutUser, token) {
-    let response = null
-
-    try {
-      response = yield this.send({
-        url: goaboutUser.links.subscriptions,
-        token
-      })
-    } catch (err) {
-      this.Log.error(err)
-      throw new this.Errors.Unauthorized()
-    }
-
-    const subscriptions = response.halBody.getEmbeds('item') || []
-    this.fillSubscriptionsWithIds(subscriptions)
-
-    // this.Log.debug('User has subscriptions')
-    // this.Log.debug(JSON.stringify(subscriptions))
-
-    return subscriptions
-  }
-
-  fillSubscriptionsWithIds(subscriptions) {
-    subscriptions.forEach(subscription => {
-      const splitLink = subscription.productHref.split('/')
-      subscription.subscriptionId = parseInt(splitLink[splitLink.length - 1], 10)
-    })
-  }
-
-  * request({ resource, method, relation, body, token, query }) {
-    // If no resource provided, then use root of the api
-    let resourceToCall = !resource ? yield this.getApi({ token }) : resource
-    if (!resourceToCall.getLink) resourceToCall = halson(resourceToCall)
-
-    let requestUrl = resourceToCall.getLink(relation)
-    requestUrl = requestUrl ? requestUrl.href : undefined
-    if (!requestUrl || !requestUrl.length) throw new this.Errors.BadRequest()
-
-    // Remove all link params
-    // TODO Support for link params
-    requestUrl = requestUrl.replace(/{\?.*}/g, '')
-
-    const response = yield this.send({
-      url: requestUrl,
-      method,
-      body,
-      token,
-      query
-    })
-
-    // Filter all the extra stuff from the request obj
-    return _.pick(response, ['statusCode', 'body', 'halBody', 'headers'])
-  }
-
-  // Internal method, try to avoid using unless necessary
-  * send({ url, method, token, body, query }) {
-    let response = null
-    if (!method) method = 'GET' // eslint-disable-line
-
-    this.Log.info(`${method} to ${url} with body ${JSON.stringify(body || {})} and query ${JSON.stringify(query || {})}`)
-
-    try {
-      response = yield this.$request.send({
-        url,
-        method,
-        json: true,
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/hal+json,application/json'
-        },
-        body: (method !== 'GET' && body) ? body : undefined,
-        qs: query || undefined
-      })
-    } catch (err) {
-      this.Log.error(`Error while requesting ${url} with body ${JSON.stringify(body || {})} and query ${JSON.stringify(query || {})}`)
-      this.Log.error(err)
-      this.Raven.captureException(err)
-      throw new this.Errors.NoResponse('E_GOABOUT_API_IS_DOWN')
-    }
-
-    this.throwErrorIfFailingRequest({ response, url })
-
-    return response
-  }
-
-  // Throw error is result is 4xx or 5xx
-  throwErrorIfFailingRequest({ response, url }) {
-    if (['4', '5'].includes(response.statusCode.toString()[0])) {
-      this.Log.info(`Failed ${url} with answer ${JSON.stringify(response.body)}`)
-
-      const error = new this.Errors.PassThrough(response.statusCode, Object.assign(response.body, { code: 'E_GOABOUT_API_FAILED' }))
-      this.Raven.captureException(error)
-      throw error
-    }
-  }
-
-  generateBookingRequest({ token, params, productId }) {
-    return {
-      method: 'POST',
-      token,
-      body: {
-        products: [{
-          productHref: `https://api.goabout.com/product/${productId}`,
-          properties: {}
-        }],
-        userProperties: {
-          email: params.email,
-          phonenumber: params.phoneNumber, // not the small 'n' in 'number'
-          name: params.name,
-        }
       }
     }
   }

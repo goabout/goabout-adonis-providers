@@ -1,5 +1,4 @@
-node_modules
-node_modules_symlink
+node_modules*
 storage
 !.gitkeep
 .env
