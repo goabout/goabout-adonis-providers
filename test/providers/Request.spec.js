@@ -1,70 +1,69 @@
 const Request = require('../../providers/Request').bare()
 
 describe('RequestService', () => {
-  beforeEach(function* () {
-    v.requestOptions = null
-    v.response = {
-      code: 200
-    }
+  describe('sendSkippingErrorHangling', () => {
+    beforeEach(function* () {
+      t.response = {
+        code: 200
+      }
 
-    v.responseHal = {
-      code: 200,
-      headers: {
-        'content-type': 'Application/hal+json'
-      },
-      body: '{ \
-        "item": "yep",\
-        "_links": {\
-          "self": {\
-            "href": "https://self.href`"\
-          }\
-        } \
-      }'
-    }
+      t.responseHal = {
+        code: 200,
+        headers: {
+          'content-type': 'Application/hal+json'
+        },
+        body: `{
+          "item": "yep",
+          "_links": {
+            "self": {
+              "href": "https://self.href"
+            }
+          }
+        }`
+      }
 
-    v.callback = {
-      error: null
-    }
+      t.callback = {
+        error: null
+      }
 
-    v.fakeRequestLib = function (options, cb) {
-      setTimeout(() => {
-        v.requestOptions = options
-        cb(v.callback.error, v.response)
-      })
-    }
+      t.fakeRequestLib = function (options, cb) {
+        setTimeout(() => {
+          t.requestOptions = options
+          cb(t.callback.error, t.response)
+        })
+      }
 
-    v.request = new Request(v.fakeRequestLib, v.Env, v.log)
-  })
+      t.request = new Request(t.fakeRequestLib, t.Env, t.log)
+    })
 
-  describe('request', () => {
     it('should send request to the initial library', function* () {
       const options = { url: 'https://hel.lo' }
-      const result = yield v.request.send(options)
+      const result = yield t.request.sendSkippingErrorHangling(options)
 
-      expect(v.requestOptions.url).to.equal(options.url)
-      expect(result).to.equal(v.response)
+      assert(t.requestOptions.url === options.url)
+      assert(result === t.response)
     })
 
     it('should parse hal to halBody if available', function* () {
-      v.response = v.responseHal
+      t.response = t.responseHal
 
       const options = { url: 'https://hel.lo' }
-      const result = yield v.request.send(options)
+      const result = yield t.request.sendSkippingErrorHangling(options)
 
-      expect(result.halBody.getLink('self').href).to.equal('https://self.href`')
+      assert.equal(result.halBody.getLink('self').href, 'https://self.href')
     })
 
     it('should return error when failed', function* () {
-      v.callback.error = new Error('SOME_ERROR')
-      v.response.code = '400'
+      t.callback.error = new Error('SOME_ERROR')
       const options = { url: 'https://hel.lo' }
 
       try {
-        yield v.request.send(options)
-        expect(true).to.be(false)
+        yield t.request.sendSkippingErrorHangling(options)
       } catch (err) {
-        expect(err).to.equal(v.callback.error)
+        t.errorResult = err
       }
+
+      assert.equal(t.errorResult, t.callback.error)
     })
   })
 })

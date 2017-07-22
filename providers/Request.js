@@ -62,7 +62,7 @@ class Request {
     this.Log.info(`${method} to ${url} with body ${JSON.stringify(body || {})} and query ${JSON.stringify(query || {})}`)
 
     try {
-      response = yield this.sendAsPromise({
+      response = yield this.sendSkippingErrorHangling({
         url,
         method,
         json: true,
@@ -86,8 +86,8 @@ class Request {
     return _.pick(response, ['statusCode', 'body', 'halBody', 'headers'])
   }
 
-  // Request library wrapped as promise
-  sendAsPromise(options) {
+  // Original request library wrapped as promise
+  sendSkippingErrorHangling(options) {
     return new Promise((resolve, reject) => {
       const isDebug = this.Env.get('LOGGING', 'error') === 'debug'
       const requestOptions = _.merge({}, options, {

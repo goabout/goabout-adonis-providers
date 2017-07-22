@@ -13,9 +13,9 @@ after(done => {
 })
 
 beforeEach(function* () {
-  v.log = Logger.bare('off')
+  t.log = Logger.bare('off')
 
-  v.Env = {
+  t.Env = {
     vars: {
     },
     get(key) {
@@ -23,7 +23,7 @@ beforeEach(function* () {
     }
   }
 
-  v.Raven = {
+  t.Raven = {
     captureException: sandbox.stub()
   }
 })
