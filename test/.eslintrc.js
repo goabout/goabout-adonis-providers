@@ -1,7 +1,9 @@
 module.exports = {
   globals: {
-    'v': false,
+    't': false,
     'config': false,
-    'halson': false
+    'halson': false,
+    'result': false,
+    'errorResult': false
   }
 }

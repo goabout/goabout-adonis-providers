@@ -31,25 +31,27 @@
       "make"
     ]
   },
+  "directories": {
+    "test": "test/"
+  },
   "devDependencies": {
     "adonis-fold": "^3.0.3",
     "adonis-sink": "^1.0.6",
     "adonis-validation-provider": "^3.0.5",
-    "chai": "^4.1.0",
-    "chai-generator": "^2.1.0",
     "co-mocha": "^1.2.0",
+    "espower-loader": "^1.2.2",
     "goabout-eslint-config": "git+https://github.com/goabout/goabout-eslint-config.git",
     "gulp": "^3.9.1",
     "gulp-load-plugins": "^1.5.0",
-    "gulp-mocha": "^4.3.1",
     "gulp-nodemon": "^2.2.1",
     "gulp-spawn": "^0.4.0",
+    "gulp-spawn-mocha": "^3.3.0",
     "gulp-sync": "^0.1.4",
     "gulp-watch": "^4.3.11",
+    "intelli-espower-loader": "^1.0.1",
     "mocha": "^3.3.0",
-    "mocha-clean": "^1.0.0",
     "nodemon": "^1.11.0",
-    "should": "^11.2.1",
+    "power-assert": "1.4.4",
     "sinon": "^2.2.0",
     "sinon-as-promised": "4.0.3",
     "supertest": "^3.0.0"
