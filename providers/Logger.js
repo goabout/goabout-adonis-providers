@@ -1,7 +1,7 @@
 const ServiceProvider = require('adonis-fold').ServiceProvider // eslint-disable-line
 const winston = require('winston')
 
-const initializeLogger = (loggingLevel, papertrailHost, papertrailPort, Raven) => {
+const initializeLogger = (loggingLevel, papertrailHost, papertrailPort) => {
   const transports = [
     new (winston.transports.Console)({ colorize: true })
   ]
@@ -13,10 +13,6 @@ const initializeLogger = (loggingLevel, papertrailHost, papertrailPort, Raven) =
     const winstonPapertrail = new winston.transports.Papertrail({
       host: papertrailHost,
       port: papertrailPort
-    })
-
-    winstonPapertrail.on('error', err => {
-      Raven.captureException(err)
     })
 
     transports.push(winstonPapertrail)
@@ -36,11 +32,10 @@ class LoggerProvider extends ServiceProvider {
   * register() {
     this.app.singleton('GoAbout/providers/Logger', () => {
       const Env = use('Env')
-      const Raven = use('Raven')
       const loggingLevel = Env.get('LOGGING', 'error')
       const papertrailHost = Env.get('PAPERTRAIL_HOST', null)
       const papertrailPort = Env.get('PAPERTRAIL_PORT', null)
-      return initializeLogger(loggingLevel, papertrailHost, papertrailPort, Raven)
+      return initializeLogger(loggingLevel, papertrailHost, papertrailPort)
     })
   }
 
