@@ -2,8 +2,6 @@ const ServiceProvider = require('adonis-fold').ServiceProvider // eslint-disable
 const _ = require('lodash')
 const halson = require('halson')
 
-// TODO Refactor it not to be singleton! So each request will have its own GoAbout instance and hence API (a) is requested only once, (b) no need to pass tokens, (c) it uses Redis and caches expensive things like subscriptions automatically
-// Maybe make Bookings, API roots as class instances as well
 class GoAbout {
 
   constructor(Request, Env, Errors, Log, Raven) {
@@ -13,8 +11,12 @@ class GoAbout {
     this.Log = Log
     this.Raven = Raven
 
-    this.FINISHED_EVENT = 'finished'
-    this.OVELO_USAGE_ID = 'OveloUsageId'
+    // GoAbout subclasses
+    this.Booking = GoAboutBooking //eslint-disable-line
+
+    // Class variables
+    this.token = null
+    this.bookings = {}
   }
 
   /*
@@ -31,7 +33,7 @@ class GoAbout {
   * @param {Halson object} [resource] A resource to call. If not present, goAbout api will be used
   * @param {String} relation A relation to use
   * @param {String} [method='GET'] Method to call
-  * @param {String} [token] Token to make a call with
+  * @param {String} [token] Token to make a call with (you can set it for instance and then it will be passed automatically)
   * @param {Object} [body] A body to send with
   * @param {Object} [query] A set of query params to append to url
 
@@ -39,9 +41,9 @@ class GoAbout {
   *
   * If request did not pass at all or gave back 400/500 errors, then it will throw a error passing statusCode and a body of erorrs. This error can be reused and sent right to the client
   */
-  * request({ resource, relation, method, body, token, query }) {
+  * request({ resource, relation, method, body, query, token }) {
     // If no resource provided, then use root of the api
-    let resourceToCall = !resource ? yield this.getApi({ token }) : resource
+    let resourceToCall = !resource ? yield this.getApi() : resource
     if (!resourceToCall.getLink) resourceToCall = halson(resourceToCall)
 
     let requestUrl = resourceToCall.getLink(relation)
@@ -58,8 +60,8 @@ class GoAbout {
       url: requestUrl,
       method,
       body,
-      token,
-      query
+      query,
+      token: token || this.token
     })
   }
 
@@ -67,92 +69,90 @@ class GoAbout {
     More specific methods, based on request and Request.send
   */
 
-  * getApi({ token }) {
-    const response = yield this.Request.send({
-      url: this.Env.get('GOABOUT_API'),
-      token
-    })
+  * getApi() {
+    if (!this.api) {
+      const response = yield this.Request.send({
+        url: this.Env.get('GOABOUT_API'),
+        token: this.token
+      })
+      this.api = response.halBody
+    }
 
-    return response.halBody
+    return this.api
   }
 
-  * getUser({ token }) {
-    const api = yield this.getApi({ token })
+  * getUser() {
+    const api = yield this.getApi()
     return api.getEmbed('http://rels.goabout.com/authenticated-user')
   }
 
-  * getUserSubscriptions({ token }) {
-    let response = null
+  * getUserSubscriptions() {
+    if (!this.subscriptions) {
+      let response = null
 
-    const user = yield this.getUser({ token })
+      const user = yield this.getUser()
 
-    response = yield this.request({
-      resource: user,
-      relation: 'http://rels.goabout.com/subscriptions',
-      token
-    })
+      response = yield this.request({
+        resource: user,
+        relation: 'http://rels.goabout.com/subscriptions'
+      })
 
-    const subscriptions = response.halBody.getEmbeds('item') || []
-    this.fillSubscriptionsWithIds(subscriptions)
+      this.subscriptions = response.halBody.getEmbeds('item') || []
+      this.fillSubscriptionsWithIds(this.subscriptions)
+    }
 
     // this.Log.debug('User has subscriptions')
     // this.Log.debug(JSON.stringify(subscriptions))
 
-    return subscriptions
+    return this.subscriptions
   }
 
-  * getBooking({ url, token, withEvents }) {
-    const bookingResponse = yield this.send({ url, token })
-    const booking = bookingResponse.halBody
+  * getBooking({ url, withEvents }) {
+    if (!this.bookings[url]) {
+      const bookingResponse = yield this.Request.send({ url, token: this.token })
 
-    this.Log.debug(`Getting booking ${url}`)
+      //eslint-disable-next-line
+      const booking = new GoAboutBooking(bookingResponse.halBody, this)
 
-    if (withEvents) {
-      const eventsLink = booking.getLink('http://rels.goabout.com/booking-events').href
-      const eventsResponse = yield this.send({ url: eventsLink, token })
-      booking.events = eventsResponse.halBody.events
+      this.Log.debug(`Getting booking ${url}`)
+
+      if (withEvents) {
+        yield booking.getEvents()
+      }
+
+      this.Log.debug(`Got booking ${JSON.stringify(booking)}`)
+
+      this.bookings[url] = booking
     }
 
-    this.Log.debug(`Got booking ${JSON.stringify(booking)}`)
-
-    return booking
+    return this.bookings[url]
   }
 
-  * setEvent({ booking, token, eventType, eventData }) {
-    const requestResult = yield this.request({
-      resource: booking,
-      method: 'POST',
-      relation: 'http://rels.goabout.com/booking-events',
-      token,
-      body: {
-        type: eventType,
-        data: eventData
-      }
-    })
+  // TODO Tests
+  * getUnfinishedBookings() {
+    if (!this.unfinishedBookings) {
+      const user = yield this.getUser()
 
-    return requestResult
-  }
+      const bookingsResource = yield this.request({
+        resource: user,
+        method: 'GET',
+        relation: 'http://rels.goabout.com/user-bookings',
+        query: {
+          eventType: this.FINISHED_EVENT, // Temp event until 500s are fixed on GoAbout backend
+          eventData: 0
+        }
+      })
 
-  * getUnfinishedBookings({ token }) {
-    const user = yield this.getUser({ token })
+      const embedResources = bookingsResource.halBody.listEmbedRels()
+      const bareBookings = embedResources.includes('item') ? bookingsResource.halBody.getEmbed('item') : []
 
-    const bookingsResource = yield this.request({
-      resource: user,
-      method: 'GET',
-      relation: 'http://rels.goabout.com/user-bookings',
-      query: {
-        eventType: this.FINISHED_EVENT, // Temp event until 500s are fixed on GoAbout backend
-        eventData: 0
-      },
-      token
-    })
+      // eslint-disable-next-line
+      this.unfinishedBookings = bareBookings.map(bareBooking => new GoAboutBooking(bareBooking, this))
 
-    const embedResources = bookingsResource.halBody.listEmbedRels()
-    const bookings = embedResources.includes('item') ? bookingsResource.halBody.getEmbed('item') : []
+      this.Log.info(`Got user unfinished bookings ${JSON.stringify(this.unfinishedBookings)}`)
+    }
 
-    this.Log.info(`Got user unfinished bookings ${JSON.stringify(bookings)}`)
-
-    return bookings
+    return this.unfinishedBookings
   }
 
   /*
@@ -179,10 +179,9 @@ class GoAbout {
     })
   }
 
-  generateBookingRequest({ token, params, productId }) {
+  generateBookingRequest({ params, productId }) {
     return {
       method: 'POST',
-      token,
       body: {
         products: [{
           productHref: `https://api.goabout.com/product/${productId}`,
@@ -199,10 +198,56 @@ class GoAbout {
 
 }
 
+class GoAboutBooking {
+  constructor(booking, GoAboutInstance) {
+    this.GoAbout = GoAboutInstance
+    this.Env = GoAbout.Env
+    this.Errors = GoAbout.Errors
+    this.Log = GoAbout.Log
+    this.Raven = GoAbout.Raven
+
+    this.eventTypes = {
+      FINISHED: 'finished',
+      OVELO_USAGE_ID: 'OveloUsageId'
+    }
+
+    this.properties = booking
+  }
+
+  // TODO Tests
+  * setEvent({ eventType, eventData }) {
+    const requestResult = yield this.GoAbout.request({
+      resource: this.properties,
+      method: 'POST',
+      relation: 'http://rels.goabout.com/booking-events',
+      body: {
+        type: this.eventTypes[eventType] || eventType,
+        data: eventData
+      }
+    })
+
+    return requestResult
+  }
+
+  // TODO Tests
+  * getEvents() {
+    if (!this.events) {
+      const eventsResponse = this.GoAbout.request({
+        resource: this.properties,
+        relation: 'http://rels.goabout.com/booking-events'
+      })
+      this.events = eventsResponse.halBody.events
+    }
+
+    return this.events
+  }
+}
+
 class GoAboutProvider extends ServiceProvider {
 
   * register() {
-    this.app.singleton('GoAbout/providers/GoAboutApi', () => new GoAbout(
+    this.app.bind('GoAbout/providers/GoAboutApi', () =>
+      new GoAbout(
         use('GoAbout/providers/Request'),
         use('Env'),
         use('Errors'),

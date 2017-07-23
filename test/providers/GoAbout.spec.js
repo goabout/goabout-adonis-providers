@@ -10,7 +10,6 @@ describe('GoAboutService', () => {
     t.Env = new Env()
     t.Env.set('GOABOUT_API', t.goAboutApi)
 
-
     t.goAboutRootApi = halson({
       _embedded: {
         'http://rels.goabout.com/authenticated-user': {
@@ -46,6 +45,7 @@ describe('GoAboutService', () => {
     t.Request = { send: sandbox.stub() }
 
     t.GoAbout = new GoAbout(t.Request, t.Env, t.Errors, t.Log, t.Raven)
+    t.GoAbout.token = t.token
   })
 
   describe('request', () => {
@@ -72,7 +72,6 @@ describe('GoAboutService', () => {
       t.result = yield t.GoAbout.request({
         method: t.method,
         relation: t.geocoderRelation,
-        token: t.token,
         query: t.query
       })
 
@@ -95,7 +94,6 @@ describe('GoAboutService', () => {
       yield t.GoAbout.request({
         method: 'POST',
         relation: t.planRelation,
-        token: t.token,
         body: t.requestBody
       })
 
@@ -123,7 +121,6 @@ describe('GoAboutService', () => {
         resource: t.customRes,
         method: 'POST',
         relation: 'self',
-        token: t.token,
         body: t.requestBody
       })
 
@@ -170,7 +167,7 @@ describe('GoAboutService', () => {
     it('should get API', function* () {
       t.Request.send = sandbox.stub().resolves({ halBody: t.goAboutRootApi })
 
-      t.result = yield t.GoAbout.getApi({ token: t.token })
+      t.result = yield t.GoAbout.getApi()
 
       // Call args of request
       const requestArgs = t.Request.send.getCall(0).args[0]
@@ -184,7 +181,7 @@ describe('GoAboutService', () => {
       t.Request.send = sandbox.stub().rejects(new t.Errors.PassThrough(403))
 
       try {
-        yield t.GoAbout.getApi({ token: t.token })
+        yield t.GoAbout.getApi()
       } catch (error) {
         t.error = error
       }
@@ -197,11 +194,7 @@ describe('GoAboutService', () => {
     it('should get user', function* () {
       t.GoAbout.getApi = sandbox.stub().resolves(t.goAboutRootApi)
 
-      t.result = yield t.GoAbout.getUser({ token: t.token })
-
-      // Call args of request
-      const requestArgs = t.GoAbout.getApi.getCall(0).args[0]
-      assert.equal(requestArgs.token, t.token)
+      t.result = yield t.GoAbout.getUser()
 
       assert.deepEqual(t.result, t.goAboutUser)
     })
@@ -210,7 +203,7 @@ describe('GoAboutService', () => {
       t.GoAbout.getApi = sandbox.stub().rejects(new t.Errors.PassThrough(403))
 
       try {
-        yield t.GoAbout.getUser({ token: t.token })
+        yield t.GoAbout.getUser()
       } catch (error) {
         t.error = error
       }
@@ -237,37 +230,132 @@ describe('GoAboutService', () => {
       }
     })
 
-    it('should get user', function* () {
+    it('should get user subscriptions', function* () {
       t.GoAbout.getUser = sandbox.stub().resolves(t.goAboutUser)
       t.GoAbout.request = sandbox.stub().resolves(t.userSubscriptions)
       t.GoAbout.fillSubscriptionsWithIds = sandbox.stub()
 
-      t.result = yield t.GoAbout.getUserSubscriptions({ token: t.token })
-
-      // Call args of request
-      const userRequestArgs = t.GoAbout.getUser.getCall(0).args[0]
-      assert.equal(userRequestArgs.token, t.token)
+      t.result = yield t.GoAbout.getUserSubscriptions()
 
       // Call args of request
       const requestArgs = t.GoAbout.request.getCall(0).args[0]
-      assert.equal(requestArgs.token, t.token)
       assert.equal(requestArgs.resource, t.goAboutUser)
       assert.equal(requestArgs.relation, 'http://rels.goabout.com/subscriptions')
 
       assert.deepEqual(t.result, halson(t.userSubscriptions.halBody._embedded.item))
     })
 
-    it.only('should return whatever failed there', function* () {
+    it('should return whatever failed there', function* () {
       t.GoAbout.getUser = sandbox.stub().resolves(t.goAboutUser)
       t.GoAbout.request = sandbox.stub().rejects(new t.Errors.PassThrough(400))
 
       try {
-        yield t.GoAbout.getUserSubscriptions({ token: t.token })
+        yield t.GoAbout.getUserSubscriptions()
       } catch (error) {
         t.error = error
       }
 
       assert.equal(t.error.status, 400)
     })
+  })
+
+  describe.only('getBooking', () => {
+    beforeEach(() => {
+      t.bookingUrl = fake.url
+
+      t.booking = {
+        halBody: halson({
+          '_embedded': {
+            'item': [
+              {
+                name: fake.name,
+                _links: {
+                  'http://rels.goabout.com/booking-events': {
+                    href: fake.url
+                  }
+                }
+              },
+              {
+                name: fake.name,
+                _links: {
+                  'http://rels.goabout.com/booking-events': {
+                    href: fake.url
+                  }
+                }
+              }
+            ]
+          }
+        })
+      }
+    })
+
+    it('should get booking without events', function* () {
+      t.Request.send = sandbox.stub().resolves(t.booking)
+      t.bookingInstance = new t.GoAbout.Booking(t.booking.halBody, t.GoAbout)
+
+      t.result = yield t.GoAbout.getBooking({
+        url: t.bookingUrl
+      })
+
+      // Call args of request
+      const requestArgs = t.Request.send.getCall(0).args[0]
+      assert.equal(requestArgs.url, t.bookingUrl)
+      assert.equal(requestArgs.token, t.token)
+
+
+      assert.deepEqual(t.result, t.bookingInstance)
+    })
+
+    it('should get booking with events', function* () {
+      t.GoAbout.Booking.prototype.getEvents = sandbox.stub().resolves()
+      t.Request.send = sandbox.stub().resolves(t.booking)
+
+      t.result = yield t.GoAbout.getBooking({
+        url: t.bookingUrl,
+        withEvents: true
+      })
+
+      assert(t.GoAbout.Booking.prototype.getEvents.called)
+    })
+
+    it('should return whatever failed there', function* () {
+      t.Request.send = sandbox.stub().rejects(new t.Errors.PassThrough(400))
+
+      try {
+        yield t.GoAbout.getBooking({
+          url: t.bookingUrl
+        })
+      } catch (error) {
+        t.error = error
+      }
+
+      assert.equal(t.error.status, 400)
+    })
+
+    // For unfinished bookings
+    // t.unfinushedBookings = {
+    //   halBody: halson({
+    //     '_embedded': {
+    //       'item': [
+    //         {
+    //           name: fake.name,
+    //           _links: {
+    //             'http://rels.goabout.com/booking-events': {
+    //               href: fake.url
+    //             }
+    //           }
+    //         },
+    //         {
+    //           name: fake.name,
+    //           _links: {
+    //             'http://rels.goabout.com/booking-events': {
+    //               href: fake.url
+    //             }
+    //           }
+    //         }
+    //       ]
+    //     }
+    //   })
+    // }
   })
 })
