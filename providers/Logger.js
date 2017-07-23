@@ -1,15 +1,15 @@
 const ServiceProvider = require('adonis-fold').ServiceProvider // eslint-disable-line
 const winston = require('winston')
 
-// Requiring `winston-papertrail` will expose `winston.transports.Papertrail`
-require('winston-papertrail').Papertrail //eslint-disable-line
-
 const initializeLogger = (loggingLevel, papertrailHost, papertrailPort, Raven) => {
   const transports = [
     new (winston.transports.Console)({ colorize: true })
   ]
 
   if (papertrailHost && papertrailPort) {
+    // Requiring `winston-papertrail` will expose `winston.transports.Papertrail`
+    require('winston-papertrail').Papertrail //eslint-disable-line
+
     const winstonPapertrail = new winston.transports.Papertrail({
       host: papertrailHost,
       port: papertrailPort
