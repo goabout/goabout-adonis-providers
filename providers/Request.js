@@ -1,27 +1,3 @@
-/*
- Same request.js but promisifed in a way that it can be easily mocked in tests.
-
- Use as:
- var options = {
- url: 'https://api.github.com/repos/request/request',
- headers: {
- 'User-Agent': 'request'
- }
- };
-
- request(options)
- .then( => {
-
- })
- .catch(() => {
-
- })
-
- Or just yield it!
-
- See https://github.com/request/request#requestoptions-callback for options
- */
-
 const ServiceProvider = require('adonis-fold').ServiceProvider // eslint-disable-line
 const _ = require('lodash')
 const request = require('request')
@@ -29,11 +5,11 @@ const halson = require('halson')
 
 class Request {
 
-  constructor(initRequest, Env, Log) {
+  constructor(initRequest, Env, Log, Errors, Raven) {
     this.Log = Log
     this.Env = Env
-    this.Env = Env
-    this.Env = Env
+    this.Errors = Errors
+    this.Raven = Raven
     this.initRequest = initRequest
   }
 
@@ -57,12 +33,12 @@ class Request {
 
   * send({ url, method, token, body, query }) {
     let response = null
-     if (!method) method = 'GET' // eslint-disable-line
+    if (!method) method = 'GET' // eslint-disable-line
 
     this.Log.info(`${method} to ${url} with body ${JSON.stringify(body || {})} and query ${JSON.stringify(query || {})}`)
 
     try {
-      response = yield this.sendSkippingErrorHangling({
+      response = yield this.promisifedRequest({
         url,
         method,
         json: true,
@@ -77,7 +53,7 @@ class Request {
       this.Log.error(`Error while requesting ${url} with body ${JSON.stringify(body || {})} and query ${JSON.stringify(query || {})}`)
       this.Log.error(err)
       this.Raven.captureException(err)
-      throw new this.Errors.NoResponse('E_GOABOUT_API_IS_DOWN')
+      throw new this.Errors.NoResponse('E_PROVIDER_API_IS_DOWN')
     }
 
     this.throwErrorIfFailingRequest({ response, url })
@@ -87,7 +63,7 @@ class Request {
   }
 
   // Original request library wrapped as promise
-  sendSkippingErrorHangling(options) {
+  promisifedRequest(options) {
     return new Promise((resolve, reject) => {
       const isDebug = this.Env.get('LOGGING', 'error') === 'debug'
       const requestOptions = _.merge({}, options, {
@@ -108,13 +84,16 @@ class Request {
     })
   }
 
+  // TODO Make tests
   // Throw error is result is 4xx or 5xx
   throwErrorIfFailingRequest({ response, url }) {
     if (response.statusCode >= 400) {
       this.Log.info(`Failed ${url} with answer ${JSON.stringify(response.body)}`)
 
-      const error = new this.Errors.PassThrough(response.statusCode, Object.assign(response.body, { code: 'E_GOABOUT_API_FAILED' }))
-      this.Raven.captureException(error)
+      const error = new this.Errors.PassThrough(response.statusCode, Object.assign(response.body, { code: 'E_PROVIDER_FAILED' }))
+
+      // TODO Return more exact error
+      this.Raven.captureException(error, { url, response: response.body })
       throw error
     }
   }
@@ -127,7 +106,9 @@ class RequestProvider extends ServiceProvider {
     this.app.singleton('GoAbout/providers/Request', () => new Request(
         request,
         use('Env'),
-        use('Log')
+        use('Log'),
+        use('Errors'),
+        use('Raven')
       ))
   }
 

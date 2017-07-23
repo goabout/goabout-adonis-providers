@@ -6,8 +6,8 @@ const halson = require('halson')
 // Maybe make Bookings, API roots as class instances as well
 class GoAbout {
 
-  constructor(request, Env, Errors, Log, Raven) {
-    this.$request = request
+  constructor(Request, Env, Errors, Log, Raven) {
+    this.Request = Request
     this.Env = Env
     this.Errors = Errors
     this.Log = Log
@@ -48,11 +48,10 @@ class GoAbout {
     requestUrl = requestUrl ? requestUrl.href : undefined
     if (!requestUrl || !requestUrl.length) throw new this.Errors.BadRequest()
 
-    // Remove all link params
-    // TODO Support for link params
+    // TODO Support for link params, currently just removes all link params :-(
     requestUrl = requestUrl.replace(/{\?.*}/g, '')
 
-    return yield this.send({
+    return yield this.Request.send({
       url: requestUrl,
       method,
       body,
@@ -62,11 +61,11 @@ class GoAbout {
   }
 
   /*
-    More specific methods, based on request and send
+    More specific methods, based on request and Request.send
   */
 
   * getApi({ token }) {
-    const response = yield this.send({
+    const response = yield this.Request.send({
       url: this.Env.get('GOABOUT_API'),
       token
     })
@@ -204,22 +203,7 @@ class GoAbout {
 
   // Deprecated, use getUser instead
   * checkTokenAndReturnUser(token) {
-    let response = null
-
-    try {
-      response = yield this.$request.send({
-        url: this.Env.get('GOABOUT_API'),
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      })
-    } catch (err) {
-      this.Log.error('Error while requesting GoAbout API')
-      throw new this.Errors.Unauthorized()
-    }
-
-    const user = response.halBody.getEmbed('http://rels.goabout.com/authenticated-user')
+    const user = yield this.getUser({ token })
 
     if (user) {
       const constructedUser = this.constructUser(user)

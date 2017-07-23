@@ -15,4 +15,6 @@ module.exports = function () {
   this.moment = require('moment')
   this.co = require('co')
   this.halson = require('halson')
+  this.fake = require('casual')
+  this.l = console.log
 }

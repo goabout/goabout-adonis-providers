@@ -376,6 +376,13 @@ caseless@~0.12.0:
   version "0.12.0"
   resolved "https://registry.yarnpkg.com/caseless/-/caseless-0.12.0.tgz#1b681c21ff84033c826543090689420d187151dc"
 
+casual@^1.5.14:
+  version "1.5.14"
+  resolved "https://registry.yarnpkg.com/casual/-/casual-1.5.14.tgz#38d491620c1dc80808a394a8b6d970be3112d7b1"
+  dependencies:
+    mersenne-twister "^1.0.1"
+    moment "^2.15.2"
+
 cat-log@^1.0.0:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/cat-log/-/cat-log-1.0.2.tgz#1b6dd780b3f60d518af12bbc62c771b8b2eaef40"
@@ -1507,7 +1514,7 @@ glossy@^0.1.7:
 
 "goabout-eslint-config@git+https://github.com/goabout/goabout-eslint-config.git":
   version "1.0.0"
-  resolved "git+https://github.com/goabout/goabout-eslint-config.git#c64f09a649d52b9ffc6208c79e1e8b9a2e658737"
+  resolved "git+https://github.com/goabout/goabout-eslint-config.git#44fad2da6091a596d885e6d2bcb6b7f04b82abcf"
   dependencies:
     babel-eslint "^7.2.2"
     eslint "^3.19.0"
@@ -2539,6 +2546,10 @@ merge-estraverse-visitors@^1.0.0:
   dependencies:
     estraverse "^4.0.0"
 
+mersenne-twister@^1.0.1:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/mersenne-twister/-/mersenne-twister-1.1.0.tgz#f916618ee43d7179efcf641bec4531eb9670978a"
+
 methods@^1.1.1, methods@~1.1.2:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/methods/-/methods-1.1.2.tgz#5529a4d67654134edcc5266656835b0f851afcee"
@@ -2634,7 +2645,7 @@ mocha@^3.3.0:
     mkdirp "0.5.1"
     supports-color "3.1.2"
 
-moment@^2.13.0, moment@^2.18.1:
+moment@^2.13.0, moment@^2.15.2, moment@^2.18.1:
   version "2.18.1"
   resolved "https://registry.yarnpkg.com/moment/-/moment-2.18.1.tgz#c36193dd3ce1c2eed2adb7c802dbbc77a81b1c0f"
 

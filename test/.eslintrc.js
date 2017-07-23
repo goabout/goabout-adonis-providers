@@ -4,6 +4,8 @@ module.exports = {
     'config': false,
     'halson': false,
     'result': false,
-    'errorResult': false
+    'errorResult': false,
+    'fake': false,
+    'l': false
   }
 }
