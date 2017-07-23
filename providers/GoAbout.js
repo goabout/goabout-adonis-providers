@@ -46,7 +46,10 @@ class GoAbout {
 
     let requestUrl = resourceToCall.getLink(relation)
     requestUrl = requestUrl ? requestUrl.href : undefined
-    if (!requestUrl || !requestUrl.length) throw new this.Errors.BadRequest()
+    if (!requestUrl || !requestUrl.length) {
+      this.Raven.captureException(new this.Errors.Raven({ type: 'E_MISSING_RELATION', relation }))
+      throw new this.Errors.BadRequest()
+    }
 
     // TODO Support for link params, currently just removes all link params :-(
     requestUrl = requestUrl.replace(/{\?.*}/g, '')
@@ -78,18 +81,16 @@ class GoAbout {
     return api.getEmbed('http://rels.goabout.com/authenticated-user')
   }
 
-  * getUserSubscriptions(goaboutUser, token) {
+  * getUserSubscriptions({ token }) {
     let response = null
 
-    try {
-      response = yield this.send({
-        url: goaboutUser.links.subscriptions,
-        token
-      })
-    } catch (err) {
-      this.Log.error(err)
-      throw new this.Errors.Unauthorized()
-    }
+    const user = yield this.getUser({ token })
+
+    response = yield this.request({
+      resource: user,
+      relation: 'http://rels.goabout.com/subscriptions',
+      token
+    })
 
     const subscriptions = response.halBody.getEmbeds('item') || []
     this.fillSubscriptionsWithIds(subscriptions)
@@ -192,38 +193,6 @@ class GoAbout {
           phonenumber: params.phoneNumber, // not the small 'n' in 'number'
           name: params.name,
         }
-      }
-    }
-  }
-
-
-  /*
-    Deprecated methods
-  */
-
-  // Deprecated, use getUser instead
-  * checkTokenAndReturnUser(token) {
-    const user = yield this.getUser({ token })
-
-    if (user) {
-      const constructedUser = this.constructUser(user)
-      this.Log.debug('Received GoAbout user', constructedUser)
-      return constructedUser
-    }
-
-    this.Log.error('User token wrong or not authorized')
-    throw new this.Errors.Unauthorized()
-  }
-
-  // Deprecated, use getUser instead
-  constructUser(goaboutUser) {
-    return {
-      email: goaboutUser.email,
-      validated: goaboutUser.validated,
-      links: {
-        self: goaboutUser.getLink('self').href,
-        subscriptions: goaboutUser.getLink('http://rels.goabout.com/subscriptions').href,
-        bookings: goaboutUser.getLink('http://rels.goabout.com/user-bookings').href
       }
     }
   }
