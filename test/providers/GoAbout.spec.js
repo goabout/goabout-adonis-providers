@@ -64,7 +64,7 @@ describe('GoAboutService', () => {
         halBody: { halProp: fake.word },
       }
 
-      sandbox.stub(t.GoAbout, 'getApi').resolves(t.goAboutRootApi)
+      sandbox.stub(t.GoAbout, 'getRoot').resolves(t.goAboutRootApi)
       t.Request.send.resolves(t.successResponse)
     })
 
@@ -163,11 +163,11 @@ describe('GoAboutService', () => {
     })
   })
 
-  describe('getApi', () => {
+  describe('getRoot', () => {
     it('should get API', function* () {
       t.Request.send = sandbox.stub().resolves({ halBody: t.goAboutRootApi })
 
-      t.result = yield t.GoAbout.getApi()
+      t.result = yield t.GoAbout.getRoot()
 
       // Call args of request
       const requestArgs = t.Request.send.getCall(0).args[0]
@@ -181,7 +181,7 @@ describe('GoAboutService', () => {
       t.Request.send = sandbox.stub().rejects(new t.Errors.PassThrough(403))
 
       try {
-        yield t.GoAbout.getApi()
+        yield t.GoAbout.getRoot()
       } catch (error) {
         t.error = error
       }
@@ -192,7 +192,7 @@ describe('GoAboutService', () => {
 
   describe('getUser', () => {
     it('should get user', function* () {
-      t.GoAbout.getApi = sandbox.stub().resolves(t.goAboutRootApi)
+      t.GoAbout.getRoot = sandbox.stub().resolves(t.goAboutRootApi)
 
       t.result = yield t.GoAbout.getUser()
 
@@ -200,7 +200,7 @@ describe('GoAboutService', () => {
     })
 
     it('should return whatever failed there', function* () {
-      t.GoAbout.getApi = sandbox.stub().rejects(new t.Errors.PassThrough(403))
+      t.GoAbout.getRoot = sandbox.stub().rejects(new t.Errors.PassThrough(403))
 
       try {
         yield t.GoAbout.getUser()

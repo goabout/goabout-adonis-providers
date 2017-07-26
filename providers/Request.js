@@ -90,10 +90,10 @@ class Request {
     if (response.statusCode >= 400) {
       this.Log.info(`Failed ${url} with answer ${JSON.stringify(response.body)}`)
 
-      const error = new this.Errors.PassThrough(response.statusCode, Object.assign(response.body, { code: 'E_PROVIDER_FAILED' }))
+      const error = new this.Errors.PassThrough(response.statusCode, Object.assign(response.body, { status: 'E_PROVIDER_FAILED' }))
 
-      // TODO Return more exact error
       this.Raven.captureException(error, { url, response: response.body })
+      this.Log.error(error)
       throw error
     }
   }
