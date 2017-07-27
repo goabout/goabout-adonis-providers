@@ -1,4 +1,4 @@
-const GoAbout = require('../../providers/GoAbout').bare()
+const GoAbout = require('../goabout/GoAbout')
 const halson = require('halson')
 const { Env } = require('adonis-sink')
 
@@ -242,7 +242,7 @@ describe('GoAboutService', () => {
       assert.equal(requestArgs.resource, t.goAboutUser)
       assert.equal(requestArgs.relation, 'http://rels.goabout.com/subscriptions')
 
-      assert.deepEqual(t.result, halson(t.userSubscriptions.halBody._embedded.item))
+      assert.deepEqual(t.result, halson(t.userSubscriptions.halBody._embedded.item)) //eslint-disable-line
     })
 
     it('should return whatever failed there', function* () {
@@ -259,7 +259,7 @@ describe('GoAboutService', () => {
     })
   })
 
-  describe.only('getBooking', () => {
+  describe('getBooking', () => {
     beforeEach(() => {
       t.bookingUrl = fake.url
 

@@ -1,4 +1,4 @@
-const Request = require('../../providers/Request').bare()
+const Request = require('./Request')
 
 describe('RequestService', () => {
   beforeEach(() => {

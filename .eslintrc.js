@@ -14,5 +14,12 @@ module.exports = {
   // add your custom rules here
   'rules': {
 
+  },
+  globals: {
+    't': false,
+    'l': false,
+    'config': false,
+    'halson': false,
+    'fake': false,
   }
 }

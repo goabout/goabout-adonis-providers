@@ -1,4 +1,3 @@
-const ServiceProvider = require('adonis-fold').ServiceProvider // eslint-disable-line
 const winston = require('winston')
 
 const initializeLogger = (loggingLevel, papertrailHost, papertrailPort) => {
@@ -28,18 +27,4 @@ const initializeLogger = (loggingLevel, papertrailHost, papertrailPort) => {
   return logger
 }
 
-class LoggerProvider extends ServiceProvider {
-  * register() {
-    this.app.singleton('GoAbout/providers/Logger', () => {
-      const Env = use('Env')
-      const loggingLevel = Env.get('LOGGING', 'error')
-      const papertrailHost = Env.get('PAPERTRAIL_HOST', null)
-      const papertrailPort = Env.get('PAPERTRAIL_PORT', null)
-      return initializeLogger(loggingLevel, papertrailHost, papertrailPort)
-    })
-  }
-
-  static bare(loggingLevel) { return initializeLogger(loggingLevel) }
-}
-
-module.exports = LoggerProvider
+module.exports = initializeLogger

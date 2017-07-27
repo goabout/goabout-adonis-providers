@@ -1,8 +1,8 @@
 process.setMaxListeners(300)
 process.env.ENV_PATH = '.env.test'
 require('./globals.spec')()
-const Logger = require('../providers/Logger')
-const Errors = require('../providers/Errors').bare()
+const Logger = require('../utils/Logger')
+const Errors = require('../errors/Errors')
 
 // Global before hook
 before(done => {
@@ -14,7 +14,7 @@ after(done => {
 })
 
 beforeEach(function* () {
-  t.Log = Logger.bare('off')
+  t.Log = Logger('off')
 
   t.Raven = {
     captureException: sandbox.stub()

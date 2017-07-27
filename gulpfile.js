@@ -20,7 +20,9 @@ const config = {
 
   SPEC_FILES: [
     'test/bootstrap.spec.js',
-    'test/providers/*'
+    '**/*.spec.js',
+    '!node_modules/**/*',
+    '!node_modules**/**/*',
   ]
 }
 

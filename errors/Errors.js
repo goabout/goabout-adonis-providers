@@ -1,4 +1,3 @@
-const ServiceProvider = require('adonis-fold').ServiceProvider // eslint-disable-line
 const NE = require('node-exceptions')
 const _ = require('lodash')
 
@@ -69,7 +68,7 @@ class NoResponse extends NE.LogicalException {
   }
 }
 
-const errors = {
+module.exports = {
   BadRequest,
   Validation,
   NotFound,
@@ -79,17 +78,3 @@ const errors = {
   NoResponse,
   Raven
 }
-
-
-class ErrorsProvider extends ServiceProvider {
-
-  * register() {
-    this.app.singleton('GoAbout/providers/Errors', () => errors)
-  }
-
-  static bare() { return errors }
-
-}
-
-
-module.exports = ErrorsProvider

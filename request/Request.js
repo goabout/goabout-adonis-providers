@@ -1,6 +1,4 @@
-const ServiceProvider = require('adonis-fold').ServiceProvider // eslint-disable-line
 const _ = require('lodash')
-const request = require('request')
 const halson = require('halson')
 
 class Request {
@@ -100,20 +98,4 @@ class Request {
 
 }
 
-class RequestProvider extends ServiceProvider {
-
-  * register() {
-    this.app.singleton('GoAbout/providers/Request', () => new Request(
-        request,
-        use('Env'),
-        use('Log'),
-        use('Errors'),
-        use('Raven')
-      ))
-  }
-
-  static bare() { return Request }
-
-}
-
-module.exports = RequestProvider
+module.exports = Request
