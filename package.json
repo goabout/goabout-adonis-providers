@@ -15,7 +15,6 @@
   "dependencies": {
     "co": "^4.6.0",
     "co-each": "^0.1.0",
-    "halson": "^3.0.0",
     "lodash": "^4.17.4",
     "mixpanel": "^0.7.0",
     "moment": "^2.18.1",
@@ -27,7 +26,7 @@
     "winston-papertrail": "^1.0.5"
   },
   "directories": {
-    "test": "test/"
+    "test": "goabout/"
   },
   "devDependencies": {
     "adonis-fold": "^3.0.3",

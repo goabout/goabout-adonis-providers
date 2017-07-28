@@ -6,13 +6,14 @@ class GoAboutSubscription extends GoAboutProduct {
     // Properties which will be passed to users
     super(subscription, GoAboutInstance)
 
-    this.applicableProducts = null
+    this.applicableProducts = []
   }
 
+  // TODO add Redis support
   * getApplicableProducts() {
-    if (!this.applicableProducts) {
-      const productsResponse = yield this.GoAbout.request({
-        resource: this.properties,
+    if (!this.applicableProducts.length) {
+      const productsResponse = yield this.$GoAbout.request({
+        resource: this,
         relation: 'http://rels.goabout.com/applicable-products'
       })
 
@@ -22,15 +23,26 @@ class GoAboutSubscription extends GoAboutProduct {
     return this.applicableProducts
   }
 
-  * getProduct({ productHref, productId }) {
-    // Should get product from the list
+  * getApplicableProduct({ productHref, productId }) {
+    if (!productHref) productHref = yield this.$GoAbout.generateProductHref(productId) //eslint-disable-line
+
+    if (!this.applicableProducts.length) yield this.getApplicableProducts()
+
+    let productToReturn = null
+
+    this.applicableProducts.some(product => {
+      if (product.getLink('self').href === productHref) productToReturn = product
+      return productToReturn
+    })
+
+    return productToReturn
   }
 
-  toSanitizedHal() {
-    const sanitizedProduct = super.toSanitizedHal()
+  getSanitizedHal() {
+    const sanitizedProduct = super.getSanitizedHal()
 
     if (this.applicableProducts && this.applicableProducts.length) {
-      const sanitizedApplicableProducts = this.applicableProducts.map(product => _.pick(product, this.allowedProperties))
+      const sanitizedApplicableProducts = this.applicableProducts.map(product => _.pick(product, this.$shownProperties))
       sanitizedProduct.addEmbed('products', sanitizedApplicableProducts)
     }
 

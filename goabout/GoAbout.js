@@ -1,6 +1,6 @@
 const _ = require('lodash')
-const halson = require('halson')
 
+const HALResource = require('../utils/HALResource')
 const GoAboutBooking = require('./GoAboutBooking')
 const GoAboutProduct = require('./GoAboutProduct')
 const GoAboutSubscription = require('./GoAboutSubscription')
@@ -42,7 +42,7 @@ class GoAbout {
   * @description
   * Extracts exact link from the resource using passed hal relation and passes the request stuff to the 'send' function
   *
-  * @param {Halson object} [resource] A resource to call. If not present, goAbout api will be used
+  * @param {HALResource} [resource] A resource to call. If not present, goAbout api will be used
   * @param {String} relation A relation to use
   * @param {String} [method='GET'] Method to call
   * @param {String} [token] Token to make a call with (you can set it for instance and then it will be passed automatically)
@@ -56,7 +56,7 @@ class GoAbout {
   * request({ resource, relation, method, body, query, token }) {
     // If no resource provided, then use root of the api
     let resourceToCall = !resource ? yield this.getRoot() : resource
-    if (!resourceToCall.getLink) resourceToCall = halson(resourceToCall)
+    if (!resourceToCall.getLink) resourceToCall = new HALResource(resourceToCall)
 
     let requestUrl = resourceToCall.getLink(relation)
     requestUrl = requestUrl ? requestUrl.href : undefined
@@ -122,7 +122,7 @@ class GoAbout {
 
       subscriptionResources.forEach(resource => {
         const subscription = resource.getEmbed('http://rels.goabout.com/product')
-        if (subscription.isSubscription) subscriptions.push(new GoAboutSubscription(subscription, this)) //eslint-disable-line
+        if (subscription && subscription.isSubscription) subscriptions.push(new GoAboutSubscription(subscription, this)) //eslint-disable-line
       })
 
       this.$subscriptions = subscriptions
@@ -131,15 +131,14 @@ class GoAbout {
     return this.$subscriptions
   }
 
+  // TODO Add redis support
   * getUserSubscription({ subscriptionId, subscriptionHref }) {
-    if (!subscriptionHref && !subscriptionId) throw new this.$Errors.BadRequest('E_NO_SUBSCRIPTION_ID')
     if (!subscriptionHref) subscriptionHref = yield this.generateProductHref(subscriptionId) // eslint-disable-line
 
     // Try getting it from Redis
-    if (!this.activeSubscription) {
-      this.$Log
-      this.activeSubscription = yield this.retrieveFromRedis({ relation: subscriptionHref })
-    }
+    // if (!this.activeSubscription) {
+    //   this.activeSubscription = yield this.retrieveFromRedis({ relation: subscriptionHref })
+    // }
 
     if (!this.activeSubscription) {
       const userSubscriptions = yield this.getUserSubscriptions()
@@ -149,13 +148,10 @@ class GoAbout {
         return this.activeSubscription
       })
 
-      if (!this.activeSubscription) {
-        this.$Log.error(`User ${this.user.email} does not have subscription ${subscriptionHref}`)
-        throw new this.$Errors.Denied('E_SUBSCRIPTION_IS_MISSING', 'You do not have this subscription')
+      if (this.activeSubscription) {
+        // this.$Log.error(`User ${this.user.email} does not have subscription ${subscriptionHref}`)
+        // throw new this.$Errors.Denied('E_SUBSCRIPTION_IS_MISSING', 'You do not have this subscription')
       }
-
-      yield this.activeSubscription.getApplicableProducts()
-      this.activeSubscription = this.activeSubscription.toSanitizedHal()
     }
 
 
@@ -225,7 +221,7 @@ class GoAbout {
     try {
       this.$Log.info(`${relation} has been found in cache`)
       result = JSON.parse(redisBareResult)
-      result = halson(result)
+      result = new HALResource(result)
     } catch (e) {
       this.$Log.error('Failed to parse redis result', e, redisBareResult)
       this.$Raven.captureException(e, { input: result })
@@ -298,6 +294,8 @@ class GoAbout {
 
   // Or product-subscription href
   * generateProductHref(productId) {
+    if (!productId || (_.isString(productId) && !productId.length)) throw new this.$Errors.BadRequest('E_NO_SUBSCRIPTION_OR_PRODUCT_ID')
+
     const root = yield this.getRoot()
     return `${root.getLink('self').href}product/${productId}`
   }

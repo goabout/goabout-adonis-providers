@@ -20,9 +20,14 @@ const config = {
 
   SPEC_FILES: [
     'test/bootstrap.spec.js',
-    '**/*.spec.js',
-    '!node_modules/**/*',
-    '!node_modules**/**/*',
+    'providers/*',
+    'goabout/*',
+    'request/*',
+    'utils/*',
+    'errors/*',
+    // If we ignore folders, it still adds them first and hence acts too slow
+    // '!node_modules/**/*',
+    // '!node_modules**/**/*',
   ]
 }
 

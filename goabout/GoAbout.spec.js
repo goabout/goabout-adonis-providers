@@ -1,8 +1,9 @@
-const GoAbout = require('../goabout/GoAbout')
-const halson = require('halson')
+const GoAbout = require('./GoAbout')
+const GoAboutSubscription = require('./GoAboutSubscription')
+const HALResource = require('../utils/HALResource')
 const { Env } = require('adonis-sink')
 
-describe('GoAboutService', () => {
+describe('GoAbout', () => {
   beforeEach(function* () {
     t.token = fake.word
     t.method = 'GET'
@@ -10,7 +11,7 @@ describe('GoAboutService', () => {
     t.Env = new Env()
     t.Env.set('GOABOUT_API', t.goAboutApi)
 
-    t.goAboutRootApi = halson({
+    t.goAboutRootApi = new HALResource({
       _embedded: {
         'http://rels.goabout.com/authenticated-user': {
           email: t.email,
@@ -214,15 +215,31 @@ describe('GoAboutService', () => {
 
   describe('getUserSubscriptions', () => {
     beforeEach(() => {
+      t.realSubcriptionName = fake.name
+
       t.userSubscriptions = {
-        halBody: halson({
+        halBody: new HALResource({
           '_embedded': {
             'item': [
               {
-                name: fake.name,
+                _embedded: {
+                  'http://rels.goabout.com/product': {
+                    name: fake.name,
+                    isSubscription: false
+                  }
+                }
               },
               {
-                name: fake.name,
+                _embedded: {
+                  'http://rels.goabout.com/product': {
+                    name: t.realSubcriptionName,
+                    isSubscription: true
+                  }
+                }
+              },
+              // Faulty res
+              {
+                somethingElse: true
               }
             ]
           }
@@ -242,7 +259,13 @@ describe('GoAboutService', () => {
       assert.equal(requestArgs.resource, t.goAboutUser)
       assert.equal(requestArgs.relation, 'http://rels.goabout.com/subscriptions')
 
-      assert.deepEqual(t.result, halson(t.userSubscriptions.halBody._embedded.item)) //eslint-disable-line
+
+      assert.equal(t.result.length, 1)
+      assert.equal(t.result[0].name, t.realSubcriptionName)
+
+      assert(t.result[0] instanceof GoAboutSubscription)
+
+      // assert.deepEqual(t.result, halson(t.userSubscriptions.halBody._embedded.item)) //eslint-disable-line
     })
 
     it('should return whatever failed there', function* () {
@@ -264,7 +287,7 @@ describe('GoAboutService', () => {
       t.bookingUrl = fake.url
 
       t.booking = {
-        halBody: halson({
+        halBody: new HALResource({
           '_embedded': {
             'item': [
               {

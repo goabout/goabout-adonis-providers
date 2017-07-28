@@ -1,5 +1,5 @@
 const _ = require('lodash')
-const halson = require('halson')
+const HALResource = require('../utils/HALResource')
 
 class Request {
 
@@ -75,7 +75,7 @@ class Request {
           return reject(error)
         }
 
-        if (response.headers && response.headers['content-type'] && response.headers['content-type'].includes('hal+json')) response.halBody = halson(response.body)
+        if (response.headers && response.headers['content-type'] && response.headers['content-type'].includes('hal+json')) response.halBody = new HALResource(response.body)
 
         return resolve(response)
       })
@@ -88,7 +88,7 @@ class Request {
     if (response.statusCode >= 400) {
       this.Log.info(`Failed ${url} with answer ${JSON.stringify(response.body)}`)
 
-      const error = new this.Errors.PassThrough(response.statusCode, Object.assign(response.body, { status: 'E_PROVIDER_FAILED' }))
+      const error = new this.Errors.PassThrough(response.statusCode, Object.assign(response.body, { code: 'E_PROVIDER_FAILED' }))
 
       this.Raven.captureException(error, { url, response: response.body })
       this.Log.error(error)
