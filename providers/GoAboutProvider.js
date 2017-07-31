@@ -4,7 +4,7 @@ const GoAbout = require('../goabout/GoAbout')
 class GoAboutProvider extends ServiceProvider {
 
   * register() {
-    this.app.bind('GoAbout/providers/GoAboutApi', () => {
+    this.app.bind('GoAbout/providers/GoAbout', () => {
       const Env = use('Env')
       const isRedisActivated = !!Env.get('REDIS_PORT')
 
