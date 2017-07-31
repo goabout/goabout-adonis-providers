@@ -1,6 +1,13 @@
 const NE = require('node-exceptions')
 const _ = require('lodash')
 
+class Crash extends NE.LogicalException {
+  constructor(errorCode, details) {
+    super(errorCode, 500)
+    this.details = details
+  }
+}
+
 class BadRequest extends NE.LogicalException {
   constructor(errorCode, details) {
     super(errorCode, 400)
@@ -76,5 +83,6 @@ module.exports = {
   Denied,
   PassThrough,
   NoResponse,
-  Raven
+  Raven,
+  Crash
 }
