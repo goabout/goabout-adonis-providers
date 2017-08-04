@@ -106,7 +106,7 @@ class GoAbout {
   * getUser() {
     const api = yield this.getRoot()
     this.user = api.getEmbed('http://rels.goabout.com/authenticated-user')
-    this.user.id = this.getResourceId({ resource: this.user })
+    if (this.user) this.user.id = this.getResourceId({ resource: this.user })
 
     return this.user
   }
