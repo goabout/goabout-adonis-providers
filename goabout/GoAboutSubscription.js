@@ -17,7 +17,10 @@ class GoAboutSubscription extends GoAboutProduct {
         relation: 'http://rels.goabout.com/applicable-products'
       })
 
-      this.applicableProducts = productsResponse.halBody.getEmbeds('http://rels.goabout.com/product')
+
+      // TODO Unit test this
+      const applicableProductsResources = productsResponse.halBody.getEmbeds('http://rels.goabout.com/product')
+      this.applicableProducts = applicableProductsResources.map(productResource => new GoAboutProduct(productResource, this.$GoAbout))
     }
 
     return this.applicableProducts

@@ -5,6 +5,9 @@ class GoAboutProduct extends HALResource {
   constructor(product, GoAboutInstance) {
     super(product)
 
+    // TODO Unit test this
+    this.id = GoAboutInstance.getResourceId({ resource: this })
+
     this.$GoAbout = GoAboutInstance
     this.$Env = GoAboutInstance.$Env
     this.$Errors = GoAboutInstance.$Errors
@@ -12,7 +15,7 @@ class GoAboutProduct extends HALResource {
     this.$Raven = GoAboutInstance.$Raven
 
     // Left after sanitizing
-    this.$shownProperties = ['name', 'logoHref', 'moreInfoHref', 'description', 'categories', 'supportEmail']
+    this.$shownProperties = ['id', 'name', 'logoHref', 'moreInfoHref', 'description', 'categories', 'supportEmail', 'internalProperties']
   }
 
   getSanitizedHal() {

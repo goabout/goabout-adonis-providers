@@ -29,21 +29,22 @@ class Request {
    * If request did not pass at all or gave back 400/500 errors, then it will throw a error passing statusCode and a body of erorrs. This error can be reused and sent right to the client
    */
 
-  * send({ url, method, token, body, query }) {
+  * send({ url, method, token, body, query, headers }) {
     let response = null
     if (!method) method = 'GET' // eslint-disable-line
 
     this.Log.info(`${method} to ${url} with body ${JSON.stringify(body || {})} and query ${JSON.stringify(query || {})}`)
+
+    const headersToSend = Object.assign({}, headers)
+    headersToSend.Accept = 'application/hal+json,application/json'
+    if (token) headersToSend.Authorization = `Bearer ${token}`
 
     try {
       response = yield this.promisifedRequest({
         url,
         method,
         json: true,
-        headers: {
-          Authorization: token ? `Bearer ${token}` : undefined,
-          Accept: 'application/hal+json,application/json'
-        },
+        headers: headersToSend,
         body: (method !== 'GET' && body) ? body : undefined,
         qs: query || undefined
       })
@@ -88,7 +89,7 @@ class Request {
     if (response.statusCode >= 400) {
       this.Log.info(`Failed ${url} with answer ${JSON.stringify(response.body)}`)
 
-      const error = new this.Errors.PassThrough(response.statusCode, Object.assign(response.body, { code: 'E_PROVIDER_FAILED' }))
+      const error = new this.Errors.PassThrough(response.statusCode, Object.assign({ code: 'E_PROVIDER_FAILED' }, response.body))
 
       this.Raven.captureException(error, { url, response: response.body })
       this.Log.error(error)

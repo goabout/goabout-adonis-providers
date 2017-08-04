@@ -4,6 +4,7 @@ const HALResource = require('../utils/HALResource')
 const GoAboutBooking = require('./GoAboutBooking')
 const GoAboutProduct = require('./GoAboutProduct')
 const GoAboutSubscription = require('./GoAboutSubscription')
+const eventTypes = require('./eventTypes')
 
 class GoAbout {
 
@@ -29,6 +30,8 @@ class GoAbout {
     this.$bookings = []
     this.$subscriptions = null
     this.$root = null
+
+    this.eventTypes = eventTypes
   }
 
   /*
@@ -103,6 +106,8 @@ class GoAbout {
   * getUser() {
     const api = yield this.getRoot()
     this.user = api.getEmbed('http://rels.goabout.com/authenticated-user')
+    this.user.id = this.getResourceId({ resource: this.user })
+
     return this.user
   }
 
@@ -144,39 +149,24 @@ class GoAbout {
       const userSubscriptions = yield this.getUserSubscriptions()
 
       userSubscriptions.some(subscription => {
-        if (subscription.properties.getLink('self').href === subscriptionHref) this.activeSubscription = subscription
+        if (subscription.getLink('self').href === subscriptionHref) this.activeSubscription = subscription
         return this.activeSubscription
       })
-
-      if (this.activeSubscription) {
-        // this.$Log.error(`User ${this.user.email} does not have subscription ${subscriptionHref}`)
-        // throw new this.$Errors.Denied('E_SUBSCRIPTION_IS_MISSING', 'You do not have this subscription')
-      }
     }
 
-
+    // this.acitveSubscription is deprecated. Use request.activeSubscription instead
     return this.activeSubscription
   }
 
-  * getBooking({ url, withEvents }) {
-    if (!this.$bookings[url]) {
-      const bookingResponse = yield this.$Request.send({ url, token: this.token })
+  * getBooking({ url }) {
+    const bookingResponse = yield this.$Request.send({ url, token: this.token })
 
-      //eslint-disable-next-line
-      const booking = new GoAboutBooking(bookingResponse.halBody, this)
+    //eslint-disable-next-line
+    const booking = new GoAboutBooking(bookingResponse.halBody, this)
 
-      this.$Log.info(`Getting booking ${url}`)
+    this.$Log.info(`Got booking ${url}`)
 
-      if (withEvents) {
-        yield booking.getEvents()
-      }
-
-      this.$Log.info(`Got booking ${JSON.stringify(booking)}`)
-
-      this.$bookings[url] = booking
-    }
-
-    return this.$bookings[url]
+    return booking
   }
 
   // TODO Tests
@@ -189,18 +179,17 @@ class GoAbout {
         method: 'GET',
         relation: 'http://rels.goabout.com/user-bookings',
         query: {
-          eventType: this.FINISHED_EVENT, // Temp event until 500s are fixed on GoAbout backend
-          eventData: 0
+          eventType: eventTypes.FINISHED, // Temp event until 500s are fixed on GoAbout backend
+          eventData: false
         }
       })
 
       const embedResources = bookingsResource.halBody.listEmbedRels()
-      const bareBookings = embedResources.includes('item') ? bookingsResource.halBody.getEmbed('item') : []
+      let bareBookings = embedResources.includes('item') ? bookingsResource.halBody.getEmbed('item') : []
+      if (_.isObject(bareBookings) && !_.isArray(bareBookings)) bareBookings = [bareBookings]
 
       // eslint-disable-next-line
-      this.unfinishedBookings = bareBookings.map(bareBooking => new GoAboutBooking(bareBooking, this))
-
-      this.$Log.info(`Got user unfinished bookings ${JSON.stringify(this.unfinishedBookings)}`)
+      this.unfinishedBookings = bareBookings.length ? bareBookings.map(bareBooking => new GoAboutBooking(bareBooking, this)) : bareBookings
     }
 
     return this.unfinishedBookings
@@ -258,34 +247,17 @@ class GoAbout {
     return `token:${this.token}:relation:${relation}`
   }
 
-  /*
-    Helper methods
-  */
-
-  getOveloUsageId({ booking, bookingHref }) {
-    const oveloUsageEvent = _.find(booking.events, { type: 'oveloUsageId' })
-    const oveloUsageId = oveloUsageEvent ? oveloUsageEvent.data : null
-
-    // Throw error if not found
-    if (!oveloUsageId) {
-      this.$Raven.captureException(new this.$Errors.Raven({ type: 'E_NO_USAGE_ID_FOUND', details: `oveloUsageId event for ${bookingHref} was not found` }))
-      throw new this.$Errors.BadRequest('E_NO_USAGE_ID_FOUND', 'Something went wrong while finishing your booking!')
-    }
-
-    return oveloUsageId
-  }
-
-  generateBookingRequest({ params, productId }) {
+  generateBookingRequest({ params, product }) {
     return {
       method: 'POST',
       body: {
         products: [{
-          productHref: `https://api.goabout.com/product/${productId}`,
+          productHref: product.getLink('self').href,
           properties: {}
         }],
         userProperties: {
           email: params.email,
-          phonenumber: params.phoneNumber, // not the small 'n' in 'number'
+          phonenumber: params.phonenumber, // not the small 'n' in 'number'
           name: params.name,
         }
       }
@@ -298,6 +270,22 @@ class GoAbout {
 
     const root = yield this.getRoot()
     return `${root.getLink('self').href}product/${productId}`
+  }
+
+  // TODO TEST
+  * generateProductBookingHref({ productBookingId }) {
+    if (!productBookingId || (_.isString(productBookingId) && !productBookingId.length)) throw new this.$Errors.BadRequest('E_NO_PRODUCT_BOOKING_ID')
+
+    const root = yield this.getRoot()
+    return `${root.getLink('self').href}product-booking/${productBookingId}`
+  }
+
+  // TODO Make test
+  getResourceId({ resource }) {
+    const link = resource.getLink('self').href
+    const linkInParts = link.split('/')
+    const id = linkInParts[linkInParts.length - 1]
+    return id
   }
 }
 
