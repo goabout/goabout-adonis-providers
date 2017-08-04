@@ -22,7 +22,8 @@ describe('GoAboutProduct', () => {
       $Env: { something: fake.string },
       $Errors: { something: fake.string },
       $Log: { something: fake.string },
-      $Raven: { something: fake.string }
+      $Raven: { something: fake.string },
+      getResourceId: sandbox.stub().returns(fake.uuid)
     }
 
     t.product = new GoAboutProduct(t.fakeProduct, t.fakeGoAbout)
@@ -57,7 +58,7 @@ describe('GoAboutProduct', () => {
     it('should keep the right props', () => {
       t.result = t.product.getSanitizedHal()
 
-      assert.deepEqual(Object.keys(t.result), ['name', 'logoHref', 'moreInfoHref', 'description', 'categories', 'supportEmail'])
+      assert.deepEqual(Object.keys(t.result), ['id', 'name', 'logoHref', 'moreInfoHref', 'description', 'categories', 'supportEmail'])
     })
 
     it('should avoid extra props', () => {

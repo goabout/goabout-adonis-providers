@@ -245,6 +245,8 @@ describe('GoAbout', () => {
           }
         })
       }
+
+      sandbox.stub(t.GoAbout, 'getResourceId').returns(fake.uuid)
     })
 
     it('should get user subscriptions', function* () {
@@ -285,6 +287,7 @@ describe('GoAbout', () => {
   describe('getBooking', () => {
     beforeEach(() => {
       t.bookingUrl = fake.url
+      t.id = fake.uuid
 
       t.booking = {
         halBody: new HALResource({
@@ -310,9 +313,11 @@ describe('GoAbout', () => {
           }
         })
       }
+
+      sandbox.stub(t.GoAbout, 'getResourceId').returns(t.id)
     })
 
-    it('should get booking without events', function* () {
+    it('should get booking', function* () {
       t.Request.send = sandbox.stub().resolves(t.booking)
       t.bookingInstance = new t.GoAbout.Booking(t.booking.halBody, t.GoAbout)
 
@@ -327,18 +332,6 @@ describe('GoAbout', () => {
 
 
       assert.deepEqual(t.result, t.bookingInstance)
-    })
-
-    it('should get booking with events', function* () {
-      t.GoAbout.Booking.prototype.getEvents = sandbox.stub().resolves()
-      t.Request.send = sandbox.stub().resolves(t.booking)
-
-      t.result = yield t.GoAbout.getBooking({
-        url: t.bookingUrl,
-        withEvents: true
-      })
-
-      assert(t.GoAbout.Booking.prototype.getEvents.called)
     })
 
     it('should return whatever failed there', function* () {
