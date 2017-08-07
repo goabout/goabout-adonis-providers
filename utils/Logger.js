@@ -6,10 +6,9 @@ const initializeLogger = (loggingLevel, papertrailHost, papertrailPort) => {
   ]
 
   if (papertrailHost && papertrailPort) {
-    // Requiring `winston-papertrail` will expose `winston.transports.Papertrail`
-    require('winston-papertrail').Papertrail //eslint-disable-line
+    const Papertrail = require('winston-papertrail').Papertrail
 
-    const winstonPapertrail = new winston.transports.Papertrail({
+    const winstonPapertrail = new Papertrail({
       host: papertrailHost,
       port: papertrailPort
     })
