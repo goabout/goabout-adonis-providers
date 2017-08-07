@@ -8,7 +8,8 @@ class LoggerProvider extends ServiceProvider {
       const loggingLevel = Env.get('LOGGING', 'error')
       const papertrailHost = Env.get('PAPERTRAIL_HOST', null)
       const papertrailPort = Env.get('PAPERTRAIL_PORT', null)
-      return Logger(loggingLevel, papertrailHost, papertrailPort)
+      const papertrailHostname = Env.get('PAPERTRAIL_HOSTNAME', null)
+      return Logger(loggingLevel, papertrailHost, papertrailPort, papertrailHostname)
     })
   }
 
