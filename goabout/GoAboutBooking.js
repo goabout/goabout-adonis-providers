@@ -29,6 +29,9 @@ class GoAboutBooking extends HALResource {
       }
     })
 
+    // Remove events since these became outdated
+    if (this.events) this.events = null
+
     return requestResult
   }
 
@@ -44,6 +47,23 @@ class GoAboutBooking extends HALResource {
     return this.events
   }
 
+  * getEvent({ type }) {
+    if (!this.events) yield this.getEvents()
+
+    const event = _.findLast(this.events, { type: eventTypes[type] || type })
+    const eventData = event ? event.data : null
+
+      // Throw error if not found
+    if (!eventData) {
+      const internalError = new this.$Errors.Raven({ type: 'E_NO_EVENT_FOUND', details: `${type} event for ${this.getLink('self').href} was not found` })
+      this.$Raven.captureException(internalError)
+      this.$Log.error(internalError)
+      throw new this.$Errors.BadRequest('E_NO_EVENT_FOUND', 'Something went wrong while managing your booking!')
+    }
+
+    return eventData
+  }
+
   * getProduct() {
     if (!this.product) {
       const productsResponse = yield this.$GoAbout.request({
@@ -55,22 +75,6 @@ class GoAboutBooking extends HALResource {
     }
 
     return this.product
-  }
-
-
-  * getOveloUsageId() {
-    if (!this.events) yield this.getEvents()
-
-    const oveloUsageEvent = _.find(this.events, { type: eventTypes.OVELO_ID })
-    const oveloUsageId = oveloUsageEvent ? oveloUsageEvent.data : null
-
-      // Throw error if not found
-    if (!oveloUsageId) {
-      this.$Raven.captureException(new this.$Errors.Raven({ type: 'E_NO_USAGE_ID_FOUND', details: `oveloUsageId event for ${this.getLink('self').href} was not found` }))
-      throw new this.$Errors.BadRequest('E_NO_USAGE_ID_FOUND', 'Something went wrong while finishing your booking!')
-    }
-
-    return oveloUsageId
   }
 
   getSanitizedHal() {

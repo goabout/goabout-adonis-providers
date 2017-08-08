@@ -158,6 +158,30 @@ class GoAbout {
     return this.activeSubscription
   }
 
+  * createBooking({ product, productProperties, userProperties, onlyCheck }) {
+    let booking = null
+    const bookingResponse = yield this.request({
+      method: 'POST',
+      relation: onlyCheck ? 'http://rels.goabout.com/order-info' : 'http://rels.goabout.com/order-checkout',
+      body: {
+        products: [{
+          productHref: product.getLink('self').href,
+          properties: productProperties
+        }],
+        userProperties
+      }
+    })
+
+    if (onlyCheck) {
+      booking = bookingResponse.body.products[0]
+    } else {
+      const bookingResource = bookingResponse.halBody.getEmbed('http://rels.goabout.com/booking')
+      booking = new this.Booking(bookingResource, this)
+    }
+
+    return booking
+  }
+
   * getBooking({ url }) {
     const bookingResponse = yield this.$Request.send({ url, token: this.token })
 
@@ -185,7 +209,8 @@ class GoAbout {
       })
 
       const embedResources = bookingsResource.halBody.listEmbedRels()
-      let bareBookings = embedResources.includes('item') ? bookingsResource.halBody.getEmbed('item') : []
+      let bareBookings = embedResources.includes('item') ? bookingsResource.halBody.getEmbeds('item') : []
+
       if (_.isObject(bareBookings) && !_.isArray(bareBookings)) bareBookings = [bareBookings]
 
       // eslint-disable-next-line
@@ -247,6 +272,7 @@ class GoAbout {
     return `token:${this.token}:relation:${relation}`
   }
 
+  // Deprecated! Use create booking instead
   generateBookingRequest({ params, product }) {
     return {
       method: 'POST',
