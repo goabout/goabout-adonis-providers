@@ -8,13 +8,14 @@ const eventTypes = require('./eventTypes')
 
 class GoAbout {
 
-  constructor($Request, $Env, $Errors, $Log, $Raven, $Redis) {
+  constructor($Request, $Env, $Errors, $Log, $Raven, $Validator, $Redis) {
     // Injected values
     this.$Request = $Request
     this.$Env = $Env
     this.$Errors = $Errors
     this.$Log = $Log
     this.$Raven = $Raven
+    this.$Validator = $Validator
     this.$Redis = $Redis || null
 
     // GoAbout subclasses
@@ -160,6 +161,7 @@ class GoAbout {
 
   * createBooking({ product, productProperties, userProperties, onlyCheck }) {
     let booking = null
+
     const bookingResponse = yield this.request({
       method: 'POST',
       relation: onlyCheck ? 'http://rels.goabout.com/order-info' : 'http://rels.goabout.com/order-checkout',
@@ -272,22 +274,23 @@ class GoAbout {
     return `token:${this.token}:relation:${relation}`
   }
 
-  // Deprecated! Use create booking instead
-  generateBookingRequest({ params, product }) {
+  userValidation() {
     return {
-      method: 'POST',
-      body: {
-        products: [{
-          productHref: product.getLink('self').href,
-          properties: {}
-        }],
-        userProperties: {
-          email: params.email,
-          phonenumber: params.phonenumber, // not the small 'n' in 'number'
-          name: params.name,
-        }
-      }
+      name: 'required|min:3',
+      phonenumber: 'required|min:4',
+      email: 'required|email'
     }
+  }
+
+  * fillWithUserPropsAndValidate({ userProperties }) {
+    if (!this.user) yield this.getUser()
+
+    userProperties.email = this.user.email
+    if (!userProperties.name) userProperties.name = this.user.name
+    if (!userProperties.phonenumber) userProperties.phonenumber = this.user.phonenumber
+
+    const validation = yield this.$Validator.validateAll(userProperties, this.userValidation())
+    if (validation.errors.length) throw new this.$Errors.Validation(validation.errors)
   }
 
   // Or product-subscription href

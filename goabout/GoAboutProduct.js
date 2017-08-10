@@ -20,6 +20,7 @@ class GoAboutProduct extends HALResource {
 
   getSanitizedHal() {
     const sanitizedProduct = new HALResource(_.pick(this, this.$shownProperties))
+    sanitizedProduct.provider = this.internalProperties.provider
 
     return sanitizedProduct
   }

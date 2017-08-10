@@ -113,6 +113,18 @@ class HALResource {
     return this
   }
 
+  addLinks(rel, links) {
+    if (!this._links) {
+      this._links = {}
+    }
+
+    this._links[rel] = []
+
+    links.forEach(link => {
+      this._links[rel].push({ href: link })
+    })
+  }
+
   addEmbed(rel, embed) {
     return this.insertEmbed(rel, -1, embed)
   }

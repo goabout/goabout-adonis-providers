@@ -14,6 +14,7 @@ class GoAboutProvider extends ServiceProvider {
         use('Errors'),
         use('Log'),
         use('Raven'),
+        use('Validator'),
         isRedisActivated ? use('Redis') : null
       )
     })
