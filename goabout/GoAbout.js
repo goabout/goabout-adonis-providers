@@ -25,6 +25,7 @@ class GoAbout {
 
     // Variables
     this.token = null
+    this.supertoken = this.$Env.get('GOABOUT_SUPERTOKEN', undefined)
     this.user = null
 
     // Internal
@@ -57,7 +58,7 @@ class GoAbout {
   *
   * If request did not pass at all or gave back 400/500 errors, then it will throw a error passing statusCode and a body of erorrs. This error can be reused and sent right to the client
   */
-  * request({ resource, relation, method, body, query, token }) {
+  * request({ resource, relation, method, body, query, token, useSupertoken }) {
     // If no resource provided, then use root of the api
     let resourceToCall = !resource ? yield this.getRoot() : resource
     if (!resourceToCall.getLink) resourceToCall = new HALResource(resourceToCall)
@@ -77,7 +78,7 @@ class GoAbout {
       method,
       body,
       query,
-      token: token || this.token
+      token: useSupertoken ? this.supertoken : (token || this.token)
     })
   }
 
@@ -120,7 +121,8 @@ class GoAbout {
 
       response = yield this.request({
         resource: user,
-        relation: 'http://rels.goabout.com/subscriptions'
+        relation: 'http://rels.goabout.com/subscriptions',
+        useSupertoken: true // To get internal properties of product
       })
 
       const subscriptionResources = response.halBody.getEmbeds('item') || []

@@ -14,7 +14,8 @@ class GoAboutSubscription extends GoAboutProduct {
     if (!this.applicableProducts.length) {
       const productsResponse = yield this.$GoAbout.request({
         resource: this,
-        relation: 'http://rels.goabout.com/applicable-products'
+        relation: 'http://rels.goabout.com/applicable-products',
+        useSupertoken: true // To get internal properties of product
       })
 
 
