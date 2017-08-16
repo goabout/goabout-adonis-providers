@@ -46,7 +46,7 @@ class GoAboutSubscription extends GoAboutProduct {
     const sanitizedProduct = super.getSanitizedHal()
 
     if (this.applicableProducts && this.applicableProducts.length) {
-      const sanitizedApplicableProducts = this.applicableProducts.map(product => _.pick(product, this.$shownProperties))
+      const sanitizedApplicableProducts = this.applicableProducts.map(product => product.getSanitizedHal())
       sanitizedProduct.addEmbed('products', sanitizedApplicableProducts)
     }
 
