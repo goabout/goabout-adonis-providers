@@ -24,6 +24,10 @@ class GoAboutProduct extends HALResource {
 
     return sanitizedProduct
   }
+
+  toJSON() {
+    return _.pick(this, this.$shownProperties)
+  }
 }
 
 module.exports = GoAboutProduct

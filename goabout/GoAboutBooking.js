@@ -68,7 +68,8 @@ class GoAboutBooking extends HALResource {
     if (!this.product) {
       const productsResponse = yield this.$GoAbout.request({
         resource: this,
-        relation: 'http://rels.goabout.com/product'
+        relation: 'http://rels.goabout.com/product',
+        useSupertoken: true
       })
 
       this.product = new GoAboutProduct(productsResponse.halBody, this.$GoAbout)
