@@ -13,7 +13,8 @@ const initializeLogger = (loggingLevel, papertrailHost, papertrailPort, papertra
     const winstonPapertrail = new Papertrail({
       host: papertrailHost,
       port: papertrailPort,
-      hostname: papertrailHostname || undefined // Hostname is used to make sure that papertrail does not create a new logger each time new machine is up in the interface
+      hostname: papertrailHostname || undefined, // Hostname is used to make sure that papertrail does not create a new logger each time new machine is up in the interface
+      level: loggingLevel
     })
 
 
