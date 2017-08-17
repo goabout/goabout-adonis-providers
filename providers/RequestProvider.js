@@ -5,13 +5,18 @@ const Request = require('../request/Request')
 class RequestProvider extends ServiceProvider {
 
   * register() {
-    this.app.singleton('GoAbout/providers/Request', () => new Request(
+    this.app.singleton('GoAbout/providers/Request', () => {
+      const Env = use('Env')
+      const isRedisActivated = !!Env.get('REDIS_PORT')
+      return new Request(
         originalRequest,
-        use('Env'),
+        Env,
         use('Log'),
         use('Errors'),
-        use('Raven')
-      ))
+        use('Raven'),
+        isRedisActivated ? use('Redis') : null
+      )
+    })
   }
 
 }

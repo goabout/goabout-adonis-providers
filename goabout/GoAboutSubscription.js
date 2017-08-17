@@ -15,9 +15,9 @@ class GoAboutSubscription extends GoAboutProduct {
       const productsResponse = yield this.$GoAbout.request({
         resource: this,
         relation: 'http://rels.goabout.com/applicable-products',
-        useSupertoken: true // To get internal properties of product
+        useSupertoken: true, // To get internal properties of product
+        useCache: true
       })
-
 
       // TODO Unit test this
       const applicableProductsResources = productsResponse.halBody.getEmbeds('http://rels.goabout.com/product')

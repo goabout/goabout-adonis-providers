@@ -8,7 +8,7 @@ const eventTypes = require('./eventTypes')
 
 class GoAbout {
 
-  constructor($Request, $Env, $Errors, $Log, $Raven, $Validator, $Redis) {
+  constructor($Request, $Env, $Errors, $Log, $Raven, $Validator) {
     // Injected values
     this.$Request = $Request
     this.$Env = $Env
@@ -16,7 +16,6 @@ class GoAbout {
     this.$Log = $Log
     this.$Raven = $Raven
     this.$Validator = $Validator
-    this.$Redis = $Redis || null
 
     // GoAbout subclasses
     this.Booking = GoAboutBooking
@@ -76,26 +75,14 @@ class GoAbout {
     requestUrl = requestUrl.replace(/{\?.*}/g, '')
     const requestToken = useSupertoken ? this.supertoken : (token || this.token)
 
-    // if (useCache) {
-    //   const dbResult = yield this.retrieveFromRedis({ relation: requestUrl, token: requestToken })
-    //   if (dbResult) response = { body: dbResult, halBody: new HALResource(dbResult) }
-    // }
-
     response = yield this.$Request.send({
       url: requestUrl,
       method,
       body,
       query,
-      token: requestToken
+      token: requestToken,
+      useCache
     })
-
-    // if (useCache) {
-    //   yield this.saveToRedis({
-    //     relation: requestUrl,
-    //     token: requestToken,
-    //     resource: response.body
-    //   })
-    // }
 
     return response
   }
@@ -171,7 +158,7 @@ class GoAbout {
   * getProductOrSubscription({ id, url }) {
     if (!url) url = yield this.generateProductHref(id) // eslint-disable-line
 
-    const productResponse = yield this.$Request.send({ url, token: this.supertoken })
+    const productResponse = yield this.$Request.send({ url, token: this.supertoken, useCache: true })
     const product = productResponse.halBody.isSubscription ? new GoAboutSubscription(productResponse.halBody, this) : new GoAboutProduct(productResponse.halBody, this)
 
     this.$Log.info(`Got product/subscription ${url}`)
@@ -210,7 +197,7 @@ class GoAbout {
   }
 
   * getBooking({ url }) {
-    const bookingResponse = yield this.$Request.send({ url, token: this.token })
+    const bookingResponse = yield this.$Request.send({ url, token: this.token, useCache: true })
 
     //eslint-disable-next-line
     const booking = new GoAboutBooking(bookingResponse.halBody, this)
@@ -245,58 +232,6 @@ class GoAbout {
     }
 
     return this.unfinishedBookings
-  }
-
-  * retrieveFromRedis({ relation, token }) {
-    let result = null
-    if (!this.$Redis) return result
-
-    const key = this.constructRedisKey({ relation, token })
-
-    const redisBareResult = yield this.$Redis.get(key)
-    if (!redisBareResult) {
-      this.$Log.info(`No ${relation} found in cache`)
-      return result
-    }
-
-    try {
-      this.$Log.info(`${relation} has been found in cache`)
-      result = JSON.parse(redisBareResult)
-    } catch (e) {
-      this.$Log.error('Failed to parse redis result', e, redisBareResult)
-      this.$Raven.captureException(e, { input: result })
-    }
-
-    return result
-  }
-
-  * saveToRedis({ relation, token, resource }) {
-    // Pass if no Redis defined
-    if (!this.$Redis) return
-
-    try {
-      const redisTransaction = this.$Redis.multi()
-
-      const key = this.constructRedisKey({ relation, token })
-      redisTransaction.set(key, JSON.stringify(resource))
-      redisTransaction.expire(key, this.$Env.get('CACHE_TIME', 300)) // 5 minutes
-
-      yield redisTransaction.exec()
-      this.$Log.info(`Relation ${relation} saved to Redis`)
-    } catch (err) {
-      this.$Log.error(`Failed to save ${relation} to redis`)
-      this.$Log.error(err)
-      this.$Raven.captureException(err)
-    }
-  }
-
-  constructRedisKey({ relation, token }) {
-    if (!relation) {
-      this.$Raven.captureException(new this.$Errors.Raven({ type: 'E_NO_RELATION_FOR_RAVEN' }))
-      return null
-    }
-
-    return `token:${token || this.token}:relation:${relation}`
   }
 
   userValidation() {

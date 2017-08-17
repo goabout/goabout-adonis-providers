@@ -4,20 +4,14 @@ const GoAbout = require('../goabout/GoAbout')
 class GoAboutProvider extends ServiceProvider {
 
   * register() {
-    this.app.bind('GoAbout/providers/GoAbout', () => {
-      const Env = use('Env')
-      const isRedisActivated = !!Env.get('REDIS_PORT')
-
-      return new GoAbout(
+    this.app.bind('GoAbout/providers/GoAbout', () => new GoAbout(
         use('GoAbout/providers/Request'),
         use('Env'),
         use('Errors'),
         use('Log'),
         use('Raven'),
-        use('Validator'),
-        isRedisActivated ? use('Redis') : null
-      )
-    })
+        use('Validator')
+      ))
   }
 
   static bare() { return GoAbout }
