@@ -22,7 +22,7 @@ class GoAboutProduct extends HALResource {
     const sanitizedProduct = new HALResource(_.pick(this, this.$shownProperties))
     if (this.internalProperties) sanitizedProduct.provider = this.internalProperties.provider
 
-    if (this.getLink('self')) sanitizedProduct.addLink('self', this.getLink('self').href)
+    if (this.getLink('self')) sanitizedProduct.addLink(this.isSubscription ? 'original-subscription' : 'original-product', this.getLink('self').href)
 
     return sanitizedProduct
   }

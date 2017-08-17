@@ -66,16 +66,22 @@ class GoAboutBooking extends HALResource {
 
   * getProduct() {
     if (!this.product) {
-      const productsResponse = yield this.$GoAbout.request({
-        resource: this,
-        relation: 'http://rels.goabout.com/product',
-        useSupertoken: true
-      })
-
-      this.product = new GoAboutProduct(productsResponse.halBody, this.$GoAbout)
+      this.product = yield this.$GoAbout.getProductOrSubscription({ url: this.getLink('http://rels.goabout.com/product').href })
     }
 
     return this.product
+  }
+
+  * getSubscription() {
+    const subscriptionHref = yield this.getEvent({ type: 'SUBSCRIPTION_HREF' })
+
+    if (!this.subscription) {
+      this.subscription = yield this.$GoAbout.getProductOrSubscription({
+        url: subscriptionHref
+      })
+    }
+
+    return this.subscription
   }
 
   getSanitizedHal() {

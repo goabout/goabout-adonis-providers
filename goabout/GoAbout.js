@@ -58,7 +58,9 @@ class GoAbout {
   *
   * If request did not pass at all or gave back 400/500 errors, then it will throw a error passing statusCode and a body of erorrs. This error can be reused and sent right to the client
   */
-  * request({ resource, relation, method, body, query, token, useSupertoken }) {
+  * request({ resource, relation, method, body, query, token, useSupertoken, useCache }) {
+    let response = null
+
     // If no resource provided, then use root of the api
     let resourceToCall = !resource ? yield this.getRoot() : resource
     if (!resourceToCall.getLink) resourceToCall = new HALResource(resourceToCall)
@@ -72,14 +74,30 @@ class GoAbout {
 
     // TODO Support for link params, currently just removes all link params :-(
     requestUrl = requestUrl.replace(/{\?.*}/g, '')
+    const requestToken = useSupertoken ? this.supertoken : (token || this.token)
 
-    return yield this.$Request.send({
+    // if (useCache) {
+    //   const dbResult = yield this.retrieveFromRedis({ relation: requestUrl, token: requestToken })
+    //   if (dbResult) response = { body: dbResult, halBody: new HALResource(dbResult) }
+    // }
+
+    response = yield this.$Request.send({
       url: requestUrl,
       method,
       body,
       query,
-      token: useSupertoken ? this.supertoken : (token || this.token)
+      token: requestToken
     })
+
+    // if (useCache) {
+    //   yield this.saveToRedis({
+    //     relation: requestUrl,
+    //     token: requestToken,
+    //     resource: response.body
+    //   })
+    // }
+
+    return response
   }
 
   /*
@@ -87,19 +105,13 @@ class GoAbout {
   */
 
   * getRoot() {
-    if (!this.$root) this.$root = yield this.retrieveFromRedis({ relation: 'root' })
-
     if (!this.$root) {
       const response = yield this.$Request.send({
         url: this.$Env.get('GOABOUT_API'),
-        token: this.token
+        token: this.token,
+        useCache: true
       })
       this.$root = response.halBody
-
-      yield this.saveToRedis({
-        relation: 'root',
-        resource: this.$root
-      })
     }
 
     return this.$root
@@ -143,11 +155,6 @@ class GoAbout {
   * getUserSubscription({ subscriptionId, subscriptionHref }) {
     if (!subscriptionHref) subscriptionHref = yield this.generateProductHref(subscriptionId) // eslint-disable-line
 
-    // Try getting it from Redis
-    // if (!this.activeSubscription) {
-    //   this.activeSubscription = yield this.retrieveFromRedis({ relation: subscriptionHref })
-    // }
-
     if (!this.activeSubscription) {
       const userSubscriptions = yield this.getUserSubscriptions()
 
@@ -157,11 +164,22 @@ class GoAbout {
       })
     }
 
-    // this.acitveSubscription is deprecated. Use request.activeSubscription instead
     return this.activeSubscription
   }
 
-  * createBooking({ product, productProperties, userProperties, onlyCheck }) {
+  // Not dependent on user
+  * getProductOrSubscription({ id, url }) {
+    if (!url) url = yield this.generateProductHref(id) // eslint-disable-line
+
+    const productResponse = yield this.$Request.send({ url, token: this.supertoken })
+    const product = productResponse.halBody.isSubscription ? new GoAboutSubscription(productResponse.halBody, this) : new GoAboutProduct(productResponse.halBody, this)
+
+    this.$Log.info(`Got product/subscription ${url}`)
+
+    return product
+  }
+
+  * createBooking({ product, subscription, productProperties, userProperties, onlyCheck }) {
     let booking = null
 
     const bookingResponse = yield this.request({
@@ -181,6 +199,11 @@ class GoAbout {
     } else {
       const bookingResource = bookingResponse.halBody.getEmbed('http://rels.goabout.com/booking')
       booking = new this.Booking(bookingResource, this)
+
+      yield booking.setEvent({
+        eventType: 'SUBSCRIPTION_HREF',
+        eventData: subscription.getLink('self').href
+      })
     }
 
     return booking
@@ -224,11 +247,11 @@ class GoAbout {
     return this.unfinishedBookings
   }
 
-  * retrieveFromRedis({ relation }) {
+  * retrieveFromRedis({ relation, token }) {
     let result = null
     if (!this.$Redis) return result
 
-    const key = this.constructRedisKey({ relation })
+    const key = this.constructRedisKey({ relation, token })
 
     const redisBareResult = yield this.$Redis.get(key)
     if (!redisBareResult) {
@@ -239,7 +262,6 @@ class GoAbout {
     try {
       this.$Log.info(`${relation} has been found in cache`)
       result = JSON.parse(redisBareResult)
-      result = new HALResource(result)
     } catch (e) {
       this.$Log.error('Failed to parse redis result', e, redisBareResult)
       this.$Raven.captureException(e, { input: result })
@@ -248,32 +270,33 @@ class GoAbout {
     return result
   }
 
-  * saveToRedis({ relation, resource }) {
+  * saveToRedis({ relation, token, resource }) {
     // Pass if no Redis defined
     if (!this.$Redis) return
 
     try {
       const redisTransaction = this.$Redis.multi()
 
-      const key = this.constructRedisKey({ relation })
+      const key = this.constructRedisKey({ relation, token })
       redisTransaction.set(key, JSON.stringify(resource))
       redisTransaction.expire(key, this.$Env.get('CACHE_TIME', 300)) // 5 minutes
 
       yield redisTransaction.exec()
       this.$Log.info(`Relation ${relation} saved to Redis`)
     } catch (err) {
+      this.$Log.error(`Failed to save ${relation} to redis`)
       this.$Log.error(err)
       this.$Raven.captureException(err)
     }
   }
 
-  constructRedisKey({ relation }) {
+  constructRedisKey({ relation, token }) {
     if (!relation) {
       this.$Raven.captureException(new this.$Errors.Raven({ type: 'E_NO_RELATION_FOR_RAVEN' }))
       return null
     }
 
-    return `token:${this.token}:relation:${relation}`
+    return `token:${token || this.token}:relation:${relation}`
   }
 
   userValidation() {
