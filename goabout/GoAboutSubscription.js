@@ -42,11 +42,11 @@ class GoAboutSubscription extends GoAboutProduct {
     return productToReturn
   }
 
-  getSanitizedHal() {
-    const sanitizedProduct = super.getSanitizedHal()
+  toSanitizedHal() {
+    const sanitizedProduct = super.toSanitizedHal()
 
     if (this.applicableProducts && this.applicableProducts.length) {
-      const sanitizedApplicableProducts = this.applicableProducts.map(product => product.getSanitizedHal())
+      const sanitizedApplicableProducts = this.applicableProducts.map(product => product.toSanitizedHal())
       sanitizedProduct.addEmbed('products', sanitizedApplicableProducts)
     }
 

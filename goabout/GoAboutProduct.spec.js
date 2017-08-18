@@ -56,13 +56,13 @@ describe('GoAboutProduct', () => {
 
   describe('toSanitizedHal', () => {
     it('should keep the right props', () => {
-      t.result = t.product.getSanitizedHal()
+      t.result = t.product.toSanitizedHal()
 
       assert.deepEqual(Object.keys(t.result), ['id', 'name', 'logoHref', 'moreInfoHref', 'description', 'categories', 'supportEmail'])
     })
 
     it('should avoid extra props', () => {
-      t.result = t.product.getSanitizedHal()
+      t.result = t.product.toSanitizedHal()
 
       assert.equal(t.result.extraProperty, undefined)
       assert.equal(t.result._links, undefined)

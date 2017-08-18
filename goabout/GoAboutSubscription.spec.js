@@ -177,13 +177,13 @@ describe('GoAboutSubscription', () => {
 
   describe('toSanitizedHal', () => {
     it('should keep the right props', () => {
-      t.result = t.subscription.getSanitizedHal()
+      t.result = t.subscription.toSanitizedHal()
 
       assert.deepEqual(Object.keys(t.result), ['id', 'name', 'logoHref', 'moreInfoHref', 'description', 'categories', 'supportEmail'])
     })
 
     it('should avoid extra props', () => {
-      t.result = t.subscription.getSanitizedHal()
+      t.result = t.subscription.toSanitizedHal()
 
       assert.equal(t.result.extraProperty, undefined)
       assert.equal(t.result._links, undefined)
@@ -192,7 +192,7 @@ describe('GoAboutSubscription', () => {
     it('should return applicableProducts as well', () => {
       t.halifiedProducts = new HALResource(t.fakeProducts)
       t.subscription.applicableProducts = t.halifiedProducts.getEmbeds('http://rels.goabout.com/product')
-      t.result = t.subscription.getSanitizedHal()
+      t.result = t.subscription.toSanitizedHal()
 
       assert.equal(t.result.getEmbeds('products').length, 2)
 
@@ -202,7 +202,7 @@ describe('GoAboutSubscription', () => {
     })
 
     it('should return empty array if no applicable-products found', () => {
-      t.result = t.subscription.getSanitizedHal()
+      t.result = t.subscription.toSanitizedHal()
       assert.equal(t.result.getEmbeds('products').length, 0)
     })
   })

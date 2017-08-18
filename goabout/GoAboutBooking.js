@@ -84,7 +84,7 @@ class GoAboutBooking extends HALResource {
     return this.subscription
   }
 
-  getSanitizedHal() {
+  toSanitizedHal() {
     const sanitizedProduct = new HALResource(_.pick(this, this.$shownProperties))
 
     return sanitizedProduct

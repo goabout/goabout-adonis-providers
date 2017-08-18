@@ -18,7 +18,7 @@ class GoAboutProduct extends HALResource {
     this.$shownProperties = ['id', 'name', 'logoHref', 'moreInfoHref', 'description', 'categories', 'supportEmail', 'internalProperties']
   }
 
-  getSanitizedHal() {
+  toSanitizedHal() {
     const sanitizedProduct = new HALResource(_.pick(this, this.$shownProperties))
     if (this.internalProperties) sanitizedProduct.provider = this.internalProperties.provider
 
