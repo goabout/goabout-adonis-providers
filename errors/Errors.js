@@ -11,7 +11,7 @@ class Crash extends NE.LogicalException {
 class BadRequest extends NE.LogicalException {
   constructor(errorCode, details) {
     super(errorCode, 400)
-    this.details = details
+    this.details = details || 'Bad request'
     // TODO Add "action", e. g. a hint to the user of how he can solve the issue
   }
 }
@@ -19,7 +19,7 @@ class BadRequest extends NE.LogicalException {
 class NotFound extends NE.LogicalException {
   constructor(details) {
     super('E_NOT_FOUND', 404)
-    this.details = details
+    this.details = details || 'Not found'
   }
 }
 
@@ -30,6 +30,7 @@ class Unauthorized extends NE.LogicalException {
   }
 }
 
+// TODO Stop using error code as 1st arqument
 class Denied extends NE.LogicalException {
   constructor(errorCode, details) {
     super(errorCode || 'E_ACCESS_DENIED', 403)

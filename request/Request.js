@@ -106,7 +106,25 @@ class Request {
     if (response.statusCode >= 400) {
       this.$Log.info(`Failed ${url} with answer ${JSON.stringify(response.body)}`)
 
-      const error = new this.$Errors.PassThrough(response.statusCode, Object.assign({ code: 'E_PROVIDER_FAILED' }, response.body))
+      const message = (response && response.body && response.body.message) ? response.body.message : null
+      let error = null
+
+      switch (response.statusCode) {
+        case 400:
+          error = new this.$Errors.BadRequest(message)
+          break
+        case 401:
+          error = new this.$Errors.Unauthorized(message)
+          break
+        case 403:
+          error = new this.$Errors.Denied(null, message)
+          break
+        case 404:
+          error = new this.$Errors.NotFound(message)
+          break
+        default:
+          error = new this.$Errors.PassThrough(response.statusCode, Object.assign({ code: 'E_PROVIDER_FAILED', message }, response.body))
+      }
 
       this.$Raven.captureException(error, { url, response: response.body })
       this.$Log.error(error)
