@@ -81,10 +81,22 @@ class GoAbout {
       body,
       query,
       token: requestToken,
-      useCache
+      useCache,
+      errorHandler: this.errorHandler
     })
 
     return response
+  }
+
+  // Because GoAbout gives errors in different format.
+  // Attention! This error handler is only triggered automatically if requests are made via this.request
+  errorHandler(response) {
+    let details = null
+    const errorCode = null
+
+    if (response && response.body && response.body.message) details = response.body.message
+
+    return { errorCode, details }
   }
 
   /*
@@ -168,18 +180,27 @@ class GoAbout {
 
   * createBooking({ product, subscription, productProperties, userProperties, onlyCheck }) {
     let booking = null
+    let bookingResponse = null
 
-    const bookingResponse = yield this.request({
-      method: 'POST',
-      relation: onlyCheck ? 'http://rels.goabout.com/order-info' : 'http://rels.goabout.com/order-checkout',
-      body: {
-        products: [{
-          productHref: product.getLink('self').href,
-          properties: productProperties
-        }],
-        userProperties
+    try {
+      bookingResponse = yield this.request({
+        method: 'POST',
+        relation: onlyCheck ? 'http://rels.goabout.com/order-info' : 'http://rels.goabout.com/order-checkout',
+        body: {
+          products: [{
+            productHref: product.getLink('self').href,
+            properties: productProperties
+          }],
+          userProperties
+        }
+      })
+    } catch (e) {
+      if (e.details && e.details.match('validation failed for product')) {
+        throw new this.$Errors.Validation([])
+      } else {
+        throw e
       }
-    })
+    }
 
     if (onlyCheck) {
       booking = bookingResponse.body.products[0]

@@ -30,7 +30,7 @@ class Request {
    * If request did not pass at all or gave back 400/500 errors, then it will throw a error passing statusCode and a body of erorrs. This error can be reused and sent right to the client
    */
 
-  * send({ url, method, token, body, query, headers, useCache }) {
+  * send({ url, method, token, body, query, headers, useCache, errorHandler }) {
     let response = null
     if (!method) method = 'GET' // eslint-disable-line
 
@@ -64,7 +64,7 @@ class Request {
       throw new this.$Errors.NoResponse('E_PROVIDER_API_IS_DOWN')
     }
 
-    this.throwErrorIfFailingRequest({ response, url })
+    this.throwErrorIfFailingRequest({ response, url, errorHandler })
 
     if (useCache) {
       yield this.saveToRedis({
@@ -102,34 +102,46 @@ class Request {
 
   // TODO Make tests
   // Throw error is result is 4xx or 5xx
-  throwErrorIfFailingRequest({ response, url }) {
+  throwErrorIfFailingRequest({ response, url, errorHandler }) {
     if (response.statusCode >= 400) {
       this.$Log.info(`Failed ${url} with answer ${JSON.stringify(response.body)}`)
 
-      const message = (response && response.body && response.body.message) ? response.body.message : null
       let error = null
+      const { errorCode, details } = errorHandler ? errorHandler(response) : this.defaultErrorHandler(response)
 
       switch (response.statusCode) {
         case 400:
-          error = new this.$Errors.BadRequest(message)
+          error = new this.$Errors.BadRequest(errorCode, details)
           break
         case 401:
-          error = new this.$Errors.Unauthorized(message)
+          error = new this.$Errors.Unauthorized(details)
           break
         case 403:
-          error = new this.$Errors.Denied(null, message)
+          error = new this.$Errors.Denied(errorCode, details)
           break
         case 404:
-          error = new this.$Errors.NotFound(message)
+          error = new this.$Errors.NotFound(details)
           break
         default:
-          error = new this.$Errors.PassThrough(response.statusCode, Object.assign({ code: 'E_PROVIDER_FAILED', message }, response.body))
+          error = new this.$Errors.PassThrough(response.statusCode, Object.assign({ code: 'E_PROVIDER_FAILED', details }, response.body))
       }
 
       this.$Raven.captureException(error, { url, response: response.body })
       this.$Log.error(error)
       throw error
     }
+  }
+
+  defaultErrorHandler(response) {
+    let errorCode = null
+    let details = null
+
+    if (response && response.body) {
+      errorCode = response.body.code ? response.body.code : null
+      details = response.body.details ? response.body.details : null
+    }
+
+    return { errorCode, details }
   }
 
   * retrieveFromRedis({ relation, token }) {
