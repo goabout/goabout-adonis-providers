@@ -47,14 +47,14 @@ class GoAboutBooking extends HALResource {
     return this.events
   }
 
-  * getEvent({ type }) {
+  * getEvent({ type, ignoreMissing }) {
     if (!this.events) yield this.getEvents()
 
     const event = _.findLast(this.events, { type: eventTypes[type] || type })
     const eventData = event ? event.data : null
 
       // Throw error if not found
-    if (!eventData) {
+    if (!ignoreMissing && !eventData) {
       const internalError = new this.$Errors.Raven({ type: 'E_NO_EVENT_FOUND', details: `${type} event for ${this.getLink('self').href} was not found` })
       this.$Raven.captureException(internalError)
       this.$Log.error(internalError)
