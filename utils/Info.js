@@ -1,4 +1,3 @@
-const ServiceProvider = require('adonis-fold').ServiceProvider  // eslint-disable-line
 const fs = require('fs')
 
 class Info {
@@ -32,15 +31,4 @@ class Info {
 
 }
 
-class InfoProvider extends ServiceProvider {
-
-  * register() {
-    this.app.singleton('GoAbout/providers/Info', () => new Info())
-  }
-
-  static bare() { return Info }
-
-}
-
-
-module.exports = InfoProvider
+module.exports = Info

@@ -13,6 +13,12 @@ module.exports = {
   plugins: [],
   // add your custom rules here
   'rules': {
-
+    'no-underscore-dangle': 'off'
+  },
+  globals: {
+    't': false,
+    'l': false,
+    'config': false,
+    'fake': false
   }
 }

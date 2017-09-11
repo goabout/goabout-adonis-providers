@@ -20,7 +20,14 @@ const config = {
 
   SPEC_FILES: [
     'test/bootstrap.spec.js',
-    'test/providers/*'
+    'providers/*',
+    'goabout/*',
+    'request/*',
+    'utils/*',
+    'errors/*',
+    // If we ignore folders, it still adds them first and hence acts too slow
+    // '!node_modules/**/*',
+    // '!node_modules**/**/*',
   ]
 }
 
@@ -47,12 +54,12 @@ gulp.task('autotest', gulpsync.sync(['test:mocha:ignoreErrors']), () => {
 const mochaConfig = {
   reporter: 'spec',
   timeout: 3000,
-  require: ['co-mocha']
+  require: ['co-mocha', 'intelli-espower-loader']
 }
 
 gulp.task('test:mocha', () => gulp.src(config.SPEC_FILES, { read: false })
-    .pipe(plugins.mocha(mochaConfig)))
+    .pipe(plugins.spawnMocha(mochaConfig)))
 
 gulp.task('test:mocha:ignoreErrors', () => gulp.src(config.SPEC_FILES, { read: false })
-    .pipe(plugins.mocha(mochaConfig))
+    .pipe(plugins.spawnMocha(mochaConfig))
     .on('error', plugins.swallowError))

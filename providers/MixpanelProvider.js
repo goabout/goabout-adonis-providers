@@ -1,21 +1,7 @@
 const ServiceProvider = require('adonis-fold').ServiceProvider  // eslint-disable-line
 const Mixpanel = require('mixpanel')
+const FakeMixpanel = require('../utils/FakeMixpanel')
 
-class FakeMixpanel {
-  constructor() {
-    // Construct a class which silently blocks all the calls
-    ['track', 'alias', 'init', 'import', 'import_batch'].forEach(name => {
-      this[name] = () => {}
-    })
-
-    this.people = {}
-
-    const peopleMethods = ['set', 'set_once', 'increment', 'append', 'union', 'track_charge', 'clear_charges', 'delete_user']
-    peopleMethods.forEach(name => {
-      this.people[name] = () => {}
-    })
-  }
-}
 
 class MixpanelProvider extends ServiceProvider {
 

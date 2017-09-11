@@ -1,10 +1,17 @@
-const ServiceProvider = require('adonis-fold').ServiceProvider // eslint-disable-line
 const NE = require('node-exceptions')
+const _ = require('lodash')
+
+class Crash extends NE.LogicalException {
+  constructor(errorCode, details) {
+    super(errorCode, 500)
+    this.details = details
+  }
+}
 
 class BadRequest extends NE.LogicalException {
   constructor(errorCode, details) {
     super(errorCode, 400)
-    this.details = details
+    this.details = details || 'Bad request'
     // TODO Add "action", e. g. a hint to the user of how he can solve the issue
   }
 }
@@ -12,7 +19,7 @@ class BadRequest extends NE.LogicalException {
 class NotFound extends NE.LogicalException {
   constructor(details) {
     super('E_NOT_FOUND', 404)
-    this.details = details
+    this.details = details || 'Not found'
   }
 }
 
@@ -23,6 +30,7 @@ class Unauthorized extends NE.LogicalException {
   }
 }
 
+// TODO Stop using error code as 1st arqument
 class Denied extends NE.LogicalException {
   constructor(errorCode, details) {
     super(errorCode || 'E_ACCESS_DENIED', 403)
@@ -46,24 +54,36 @@ class Validation extends NE.LogicalException {
   }
 }
 
-const errors = {
+class PassThrough extends NE.LogicalException {
+  constructor(status, body) {
+    super((body && body.code) ? body.code : 'E_UNKNOWN_ERROR', status || 500)
+    this.details = (body && body.message) ? body.message : undefined // Because GoAbout sends details as "Message"
+    Object.assign(this, _.omit(body || {}, ['message']))
+  }
+}
+
+class Raven extends NE.LogicalException {
+  constructor(data) {
+    super(data.type || 'E_INTERNAL_ERROR', 500)
+    Object.assign(this, _.omit(data, ['type']))
+  }
+}
+
+class NoResponse extends NE.LogicalException {
+  constructor(errorCode, details) {
+    super(errorCode || 'NO_RESPONSE_FROM_SIDE_PARTY', 500)
+    this.details = details
+  }
+}
+
+module.exports = {
   BadRequest,
   Validation,
   NotFound,
   Unauthorized,
-  Denied
+  Denied,
+  PassThrough,
+  NoResponse,
+  Raven,
+  Crash
 }
-
-
-class ErrorsProvider extends ServiceProvider {
-
-  * register() {
-    this.app.singleton('GoAbout/providers/Errors', () => errors)
-  }
-
-  static bare() { return errors }
-
-}
-
-
-module.exports = ErrorsProvider

@@ -1,6 +1,5 @@
 const _ = require('lodash')
 const coEach = require('co-each')
-const ServiceProvider = require('adonis-fold').ServiceProvider // eslint-disable-line
 
 class Utils {
   constructor(Log) {
@@ -33,16 +32,4 @@ class Utils {
 
 }
 
-class UtilsProvider extends ServiceProvider {
-
-  * register() {
-    this.app.singleton('GoAbout/providers/Utils', () => new Utils(
-      use('Log')
-    ))
-  }
-
-  static bare(...args) { return new Utils(...args) }
-
-}
-
-module.exports = UtilsProvider
+module.exports = Utils

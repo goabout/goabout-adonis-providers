@@ -1,14 +1,6 @@
 const ServiceProvider = require('adonis-fold').ServiceProvider // eslint-disable-line
 const Raven = require('raven')
-
-class FakeRaven {
-  constructor() {
-    // Construct an object which silently blocks all the calls
-    ['captureException', 'context', 'setContext', 'captureBreadcrumb'].forEach(name => {
-      this[name] = () => {}
-    })
-  }
-}
+const FakeRaven = require('../utils/FakeRaven')
 
 class RavenProvider extends ServiceProvider {
 
@@ -38,7 +30,6 @@ class RavenProvider extends ServiceProvider {
   }
 
   static bare() { return FakeRaven }
-
 }
 
 
