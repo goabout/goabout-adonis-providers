@@ -1,4 +1,4 @@
-const ServiceProvider = require('adonis-fold').ServiceProvider // eslint-disable-line
+const { ServiceProvider } = require('@adonisjs/fold') // eslint-disable-line
 const Raven = require('raven')
 const FakeRaven = require('../utils/FakeRaven')
 

@@ -1,4 +1,4 @@
-const ServiceProvider = require('adonis-fold').ServiceProvider // eslint-disable-line
+const { ServiceProvider } = require('@adonisjs/fold') // eslint-disable-line
 const GoAbout = require('../goabout/GoAbout')
 
 class GoAboutProvider extends ServiceProvider {
