@@ -18,8 +18,8 @@ class GoAboutBooking extends HALResource {
   }
 
   // TODO Tests
-  * setEvent({ eventType, eventData }) {
-    const requestResult = yield this.$GoAbout.request({
+  async setEvent({ eventType, eventData }) {
+    const requestResult = await this.$GoAbout.request({
       resource: this,
       method: 'POST',
       relation: 'http://rels.goabout.com/booking-events',
@@ -36,8 +36,8 @@ class GoAboutBooking extends HALResource {
   }
 
   // TODO Tests
-  * getEvents() {
-    const eventsResponse = yield this.$GoAbout.request({
+  async getEvents() {
+    const eventsResponse = await this.$GoAbout.request({
       resource: this,
       relation: 'http://rels.goabout.com/booking-events'
     })
@@ -47,8 +47,8 @@ class GoAboutBooking extends HALResource {
     return this.events
   }
 
-  * getEvent({ type, ignoreMissing }) {
-    if (!this.events) yield this.getEvents()
+  async getEvent({ type, ignoreMissing }) {
+    if (!this.events) await this.getEvents()
 
     const event = _.findLast(this.events, { type: eventTypes[type] || type })
     const eventData = event ? event.data : null
@@ -64,19 +64,19 @@ class GoAboutBooking extends HALResource {
     return eventData
   }
 
-  * getProduct() {
+  async getProduct() {
     if (!this.product) {
-      this.product = yield this.$GoAbout.getProductOrSubscription({ url: this.getLink('http://rels.goabout.com/product').href })
+      this.product = await this.$GoAbout.getProductOrSubscription({ url: this.getLink('http://rels.goabout.com/product').href })
     }
 
     return this.product
   }
 
-  * getSubscription() {
-    const subscriptionHref = yield this.getEvent({ type: 'SUBSCRIPTION_HREF' })
+  async getSubscription() {
+    const subscriptionHref = await this.getEvent({ type: 'SUBSCRIPTION_HREF' })
 
     if (!this.subscription) {
-      this.subscription = yield this.$GoAbout.getProductOrSubscription({
+      this.subscription = await this.$GoAbout.getProductOrSubscription({
         url: subscriptionHref
       })
     }

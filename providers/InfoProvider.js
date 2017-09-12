@@ -3,7 +3,7 @@ const Info = require('../utils/Info')
 
 class InfoProvider extends ServiceProvider {
 
-  * register() {
+  register() {
     this.app.singleton('GoAbout/providers/Info', () => new Info())
   }
 

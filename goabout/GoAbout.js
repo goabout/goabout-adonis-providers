@@ -57,11 +57,11 @@ class GoAbout {
   *
   * If request did not pass at all or gave back 400/500 errors, then it will throw a error passing statusCode and a body of erorrs. This error can be reused and sent right to the client
   */
-  * request({ resource, relation, method, body, query, token, useSupertoken, useCache }) {
+  async request({ resource, relation, method, body, query, token, useSupertoken, useCache }) {
     let response = null
 
     // If no resource provided, then use root of the api
-    let resourceToCall = !resource ? yield this.getRoot() : resource
+    let resourceToCall = !resource ? await this.getRoot() : resource
     if (!resourceToCall.getLink) resourceToCall = new HALResource(resourceToCall)
 
     let requestUrl = resourceToCall.getLink(relation)
@@ -75,7 +75,7 @@ class GoAbout {
     requestUrl = requestUrl.replace(/{\?.*}/g, '')
     const requestToken = useSupertoken ? this.supertoken : (token || this.token)
 
-    response = yield this.$Request.send({
+    response = await this.$Request.send({
       url: requestUrl,
       method,
       body,
@@ -103,9 +103,9 @@ class GoAbout {
     More specific methods, based on request and Request.send
   */
 
-  * getRoot() {
+  async getRoot() {
     if (!this.$root) {
-      const response = yield this.$Request.send({
+      const response = await this.$Request.send({
         url: this.$Env.get('GOABOUT_API'),
         token: this.token,
         useCache: true
@@ -116,21 +116,22 @@ class GoAbout {
     return this.$root
   }
 
-  * getUser() {
-    const api = yield this.getRoot()
+  async getUser() {
+    const api = await this.getRoot()
+
     this.user = api.getEmbed('http://rels.goabout.com/authenticated-user')
     if (this.user) this.user.id = this.getResourceId({ resource: this.user })
 
     return this.user
   }
 
-  * getUserSubscriptions() {
+  async getUserSubscriptions() {
     if (!this.$subscriptions) {
       let response = null
 
-      const user = yield this.getUser()
+      const user = await this.getUser()
 
-      response = yield this.request({
+      response = await this.request({
         resource: user,
         relation: 'http://rels.goabout.com/subscriptions',
         useSupertoken: true // To get internal properties of product
@@ -151,11 +152,11 @@ class GoAbout {
   }
 
   // TODO Add redis support
-  * getUserSubscription({ subscriptionId, subscriptionHref }) {
-    if (!subscriptionHref) subscriptionHref = yield this.generateProductHref(subscriptionId) // eslint-disable-line
+  async getUserSubscription({ subscriptionId, subscriptionHref }) {
+    if (!subscriptionHref) subscriptionHref = await this.generateProductHref(subscriptionId) // eslint-disable-line
 
     if (!this.activeSubscription) {
-      const userSubscriptions = yield this.getUserSubscriptions()
+      const userSubscriptions = await this.getUserSubscriptions()
 
       userSubscriptions.some(subscription => {
         if (subscription.getLink('self').href === subscriptionHref) this.activeSubscription = subscription
@@ -167,10 +168,10 @@ class GoAbout {
   }
 
   // Not dependent on user
-  * getProductOrSubscription({ id, url }) {
-    if (!url) url = yield this.generateProductHref(id) // eslint-disable-line
+  async getProductOrSubscription({ id, url }) {
+    if (!url) url = await this.generateProductHref(id) // eslint-disable-line
 
-    const productResponse = yield this.$Request.send({ url, token: this.supertoken, useCache: true })
+    const productResponse = await this.$Request.send({ url, token: this.supertoken, useCache: true })
     const product = productResponse.halBody.isSubscription ? new GoAboutSubscription(productResponse.halBody, this) : new GoAboutProduct(productResponse.halBody, this)
 
     this.$Log.info(`Got product/subscription ${url}`)
@@ -178,12 +179,12 @@ class GoAbout {
     return product
   }
 
-  * createBooking({ product, subscription, productProperties, userProperties, onlyCheck }) {
+  async createBooking({ product, subscription, productProperties, userProperties, onlyCheck }) {
     let booking = null
     let bookingResponse = null
 
     try {
-      bookingResponse = yield this.request({
+      bookingResponse = await this.request({
         method: 'POST',
         relation: onlyCheck ? 'http://rels.goabout.com/order-info' : 'http://rels.goabout.com/order-checkout',
         body: {
@@ -208,7 +209,7 @@ class GoAbout {
       const bookingResource = bookingResponse.halBody.getEmbed('http://rels.goabout.com/booking')
       booking = new this.Booking(bookingResource, this)
 
-      yield booking.setEvent({
+      await booking.setEvent({
         eventType: 'SUBSCRIPTION_HREF',
         eventData: subscription.getLink('self').href
       })
@@ -217,8 +218,8 @@ class GoAbout {
     return booking
   }
 
-  * getBooking({ url }) {
-    const bookingResponse = yield this.$Request.send({ url, token: this.token, useCache: true })
+  async getBooking({ url }) {
+    const bookingResponse = await this.$Request.send({ url, token: this.token, useCache: true })
 
     //eslint-disable-next-line
     const booking = new GoAboutBooking(bookingResponse.halBody, this)
@@ -229,11 +230,11 @@ class GoAbout {
   }
 
   // TODO Tests
-  * getUnfinishedBookings() {
+  async getUnfinishedBookings() {
     if (!this.unfinishedBookings) {
-      const user = yield this.getUser()
+      const user = await this.getUser()
 
-      const bookingsResource = yield this.request({
+      const bookingsResource = await this.request({
         resource: user,
         method: 'GET',
         relation: 'http://rels.goabout.com/user-bookings',
@@ -263,30 +264,30 @@ class GoAbout {
     }
   }
 
-  * fillWithUserPropsAndValidate({ userProperties }) {
-    if (!this.user) yield this.getUser()
+  async fillWithUserPropsAndValidate({ userProperties }) {
+    if (!this.user) await this.getUser()
 
     userProperties.email = this.user.email
     if (!userProperties.name) userProperties.name = this.user.name
     if (!userProperties.phonenumber) userProperties.phonenumber = this.user.phonenumber
 
-    const validation = yield this.$Validator.validateAll(userProperties, this.userValidation())
-    if (validation.errors.length) throw new this.$Errors.Validation(validation.errors)
+    const validation = await this.$Validator.validateAll(userProperties, this.userValidation())
+    if (validation.fails()) throw new this.$Errors.Validation(validation.messages())
   }
 
   // Or product-subscription href
-  * generateProductHref(productId) {
+  async generateProductHref(productId) {
     if (!productId || (_.isString(productId) && !productId.length)) throw new this.$Errors.BadRequest('E_NO_SUBSCRIPTION_OR_PRODUCT_ID')
 
-    const root = yield this.getRoot()
+    const root = await this.getRoot()
     return `${root.getLink('self').href}product/${productId}`
   }
 
   // TODO TEST
-  * generateProductBookingHref({ productBookingId }) {
+  async generateProductBookingHref({ productBookingId }) {
     if (!productBookingId || (_.isString(productBookingId) && !productBookingId.length)) throw new this.$Errors.BadRequest('E_NO_PRODUCT_BOOKING_ID')
 
-    const root = yield this.getRoot()
+    const root = await this.getRoot()
     return `${root.getLink('self').href}product-booking/${productBookingId}`
   }
 

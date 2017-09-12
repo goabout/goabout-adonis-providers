@@ -10,9 +10,9 @@ class GoAboutSubscription extends GoAboutProduct {
   }
 
   // TODO add Redis support
-  * getApplicableProducts() {
+  async getApplicableProducts() {
     if (!this.applicableProducts.length) {
-      const productsResponse = yield this.$GoAbout.request({
+      const productsResponse = await this.$GoAbout.request({
         resource: this,
         relation: 'http://rels.goabout.com/applicable-products',
         useSupertoken: true, // To get internal properties of product
@@ -27,10 +27,10 @@ class GoAboutSubscription extends GoAboutProduct {
     return this.applicableProducts
   }
 
-  * getApplicableProduct({ productHref, productId }) {
-    if (!productHref) productHref = yield this.$GoAbout.generateProductHref(productId) //eslint-disable-line
+  async getApplicableProduct({ productHref, productId }) {
+    if (!productHref) productHref = await this.$GoAbout.generateProductHref(productId) //eslint-disable-line
 
-    if (!this.applicableProducts.length) yield this.getApplicableProducts()
+    if (!this.applicableProducts.length) await this.getApplicableProducts()
 
     let productToReturn = null
 

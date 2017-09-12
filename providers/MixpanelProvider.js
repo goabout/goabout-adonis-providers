@@ -5,7 +5,7 @@ const FakeMixpanel = require('../utils/FakeMixpanel')
 
 class MixpanelProvider extends ServiceProvider {
 
-  * register() {
+  register() {
     this.app.singleton('GoAbout/providers/Mixpanel', () => {
       const Env = use('Env')
       const Log = use('Log')

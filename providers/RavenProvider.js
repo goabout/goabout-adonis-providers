@@ -4,7 +4,7 @@ const FakeRaven = require('../utils/FakeRaven')
 
 class RavenProvider extends ServiceProvider {
 
-  * register() {
+  register() {
     this.app.singleton('GoAbout/providers/Raven', () => {
       const Env = use('Env')
       const Log = use('Log')

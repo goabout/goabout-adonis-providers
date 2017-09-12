@@ -30,12 +30,12 @@ class Request {
    * If request did not pass at all or gave back 400/500 errors, then it will throw a error passing statusCode and a body of erorrs. This error can be reused and sent right to the client
    */
 
-  * send({ url, method, token, body, query, headers, useCache, errorHandler }) {
+  async send({ url, method, token, body, query, headers, useCache, errorHandler }) {
     let response = null
     if (!method) method = 'GET' // eslint-disable-line
 
     if (useCache && method === 'GET') {
-      const dbResult = yield this.retrieveFromRedis({ relation: url, token })
+      const dbResult = await this.retrieveFromRedis({ relation: url, token })
       if (dbResult) {
         response = { body: dbResult, halBody: new HALResource(dbResult), headers: {}, statusCode: 200 }
         return response
@@ -49,7 +49,7 @@ class Request {
     if (token) headersToSend.Authorization = `Bearer ${token}`
 
     try {
-      response = yield this.promisifedRequest({
+      response = await this.promisifedRequest({
         url,
         method,
         json: true,
@@ -67,7 +67,7 @@ class Request {
     this.throwErrorIfFailingRequest({ response, url, errorHandler })
 
     if (useCache) {
-      yield this.saveToRedis({
+      await this.saveToRedis({
         relation: url,
         token,
         resource: response.body
@@ -144,13 +144,13 @@ class Request {
     return { errorCode, details }
   }
 
-  * retrieveFromRedis({ relation, token }) {
+  async retrieveFromRedis({ relation, token }) {
     let result = null
     if (!this.$Redis) return result
 
     const key = this.constructRedisKey({ relation, token })
 
-    const redisBareResult = yield this.$Redis.get(key)
+    const redisBareResult = await this.$Redis.get(key)
     if (!redisBareResult) {
       // this.$Log.info(`No ${relation} found in cache`)
       return result
@@ -167,7 +167,7 @@ class Request {
     return result
   }
 
-  * saveToRedis({ relation, token, resource }) {
+  async saveToRedis({ relation, token, resource }) {
     // Pass if no Redis defined
     if (!this.$Redis) return
 
@@ -178,7 +178,7 @@ class Request {
       redisTransaction.set(key, JSON.stringify(resource))
       redisTransaction.expire(key, this.$Env.get('CACHE_TIME', 300)) // 5 minutes
 
-      yield redisTransaction.exec()
+      await redisTransaction.exec()
       this.$Log.info(`Relation ${relation} saved to Redis`)
     } catch (err) {
       this.$Log.error(`Failed to save ${relation} to redis`)

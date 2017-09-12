@@ -1,21 +1,20 @@
 const _ = require('lodash')
-const coEach = require('co-each')
 
 class Utils {
   constructor(Log) {
     this.Log = Log
-    this.forEachGeneratorParallel = coEach
   }
 
-  * forEachGeneratorSync(array, cb) {
+  // Might not work anymore. Didn't test, it's deprecated code anyway
+  async forEachGeneratorSync(array, cb) {
     if (_.isArray(array)) {
       for (let i = 0; i < array.length; ++i) {
-        yield cb(array[i], i)
+        await cb(array[i], i) //eslint-disable-line
       }
     } else if (_.isObject(array)) {
       const keys = Object.keys(array)
       for (let i = 0; i < keys.length; ++i) {
-        yield cb(array[keys[i]], keys[i])
+        await cb(array[keys[i]], keys[i])  //eslint-disable-line
       }
     }
   }

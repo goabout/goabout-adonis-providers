@@ -3,7 +3,7 @@ const Errors = require('../errors/Errors')
 
 class ErrorsProvider extends ServiceProvider {
 
-  * register() {
+  register() {
     this.app.singleton('GoAbout/providers/Errors', () => Errors)
   }
 
