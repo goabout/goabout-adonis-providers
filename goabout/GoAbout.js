@@ -1,4 +1,5 @@
 const _ = require('lodash')
+const moment = require('moment')
 
 const HALResource = require('../utils/HALResource')
 const GoAboutBooking = require('./GoAboutBooking')
@@ -209,10 +210,20 @@ class GoAbout {
       const bookingResource = bookingResponse.halBody.getEmbed('http://rels.goabout.com/booking')
       booking = new this.Booking(bookingResource, this)
 
-      await booking.setEvent({
-        eventType: 'SUBSCRIPTION_HREF',
-        eventData: subscription.getLink('self').href
-      })
+      await Promise.all([
+        booking.setEvent({
+          eventType: 'SUBSCRIPTION_HREF',
+          eventData: subscription.getLink('self').href
+        }),
+        booking.setEvent({
+          eventType: 'FINISHED',
+          eventData: false
+        }),
+        booking.setEvent({
+          eventType: 'CREATED_AT',
+          eventData: moment().format('YYYY-MM-DDTHH:mm:ssZ')
+        })
+      ])
     }
 
     return booking
