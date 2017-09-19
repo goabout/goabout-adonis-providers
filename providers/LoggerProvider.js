@@ -1,8 +1,8 @@
-const ServiceProvider = require('adonis-fold').ServiceProvider // eslint-disable-line
+const { ServiceProvider } = require('@adonisjs/fold') // eslint-disable-line
 const Logger = require('../utils/Logger')
 
 class LoggerProvider extends ServiceProvider {
-  * register() {
+  register() {
     this.app.singleton('GoAbout/providers/Logger', () => {
       const Env = use('Env')
       const loggingLevel = Env.get('LOGGING', 'error')

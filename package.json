@@ -29,9 +29,9 @@
     "test": "goabout/"
   },
   "devDependencies": {
-    "adonis-fold": "^3.0.3",
-    "adonis-sink": "^1.0.6",
-    "adonis-validation-provider": "^3.0.5",
+    "@adonisjs/fold": "^4.0.4",
+    "@adonisjs/sink": "^1.0.13",
+    "@adonisjs/validator": "^4.0.4",
     "casual": "^1.5.14",
     "co-mocha": "^1.2.0",
     "espower-loader": "^1.2.2",

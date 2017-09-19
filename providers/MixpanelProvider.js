@@ -1,11 +1,11 @@
-const ServiceProvider = require('adonis-fold').ServiceProvider  // eslint-disable-line
+const { ServiceProvider } = require('@adonisjs/fold')  // eslint-disable-line
 const Mixpanel = require('mixpanel')
 const FakeMixpanel = require('../utils/FakeMixpanel')
 
 
 class MixpanelProvider extends ServiceProvider {
 
-  * register() {
+  register() {
     this.app.singleton('GoAbout/providers/Mixpanel', () => {
       const Env = use('Env')
       const Log = use('Log')

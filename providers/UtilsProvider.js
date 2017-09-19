@@ -1,9 +1,9 @@
-const ServiceProvider = require('adonis-fold').ServiceProvider // eslint-disable-line
+const { ServiceProvider } = require('@adonisjs/fold') // eslint-disable-line
 const Utils = require('../utils/Utils')
 
 class UtilsProvider extends ServiceProvider {
 
-  * register() {
+  register() {
     this.app.singleton('GoAbout/providers/Utils', () => new Utils(
       use('Log')
     ))

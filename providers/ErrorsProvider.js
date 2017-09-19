@@ -1,9 +1,9 @@
-const ServiceProvider = require('adonis-fold').ServiceProvider // eslint-disable-line
+const { ServiceProvider } = require('@adonisjs/fold') // eslint-disable-line
 const Errors = require('../errors/Errors')
 
 class ErrorsProvider extends ServiceProvider {
 
-  * register() {
+  register() {
     this.app.singleton('GoAbout/providers/Errors', () => Errors)
   }
 

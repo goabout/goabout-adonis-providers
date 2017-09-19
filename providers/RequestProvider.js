@@ -1,10 +1,10 @@
-const ServiceProvider = require('adonis-fold').ServiceProvider // eslint-disable-line
+const { ServiceProvider } = require('@adonisjs/fold') // eslint-disable-line
 const originalRequest = require('request')
 const Request = require('../request/Request')
 
 class RequestProvider extends ServiceProvider {
 
-  * register() {
+  register() {
     this.app.singleton('GoAbout/providers/Request', () => {
       const Env = use('Env')
       const isRedisActivated = !!Env.get('REDIS_PORT')
