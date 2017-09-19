@@ -126,7 +126,10 @@ class Request {
           error = new this.$Errors.PassThrough(response.statusCode, Object.assign({ code: 'E_PROVIDER_FAILED', details }, response.body))
       }
 
-      this.$Raven.captureException(error, { url, response: response.body })
+      error.providerUrl = url
+      error.providerResponse = response.body
+
+      this.$Raven.captureException(error)
       this.$Log.error(error)
       throw error
     }
