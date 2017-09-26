@@ -55,7 +55,8 @@ class Request {
         json: true,
         headers: headersToSend,
         body: (method !== 'GET' && body) ? body : undefined,
-        qs: query || undefined
+        qs: query || undefined,
+        timeout: 30000
       })
     } catch (err) {
       this.$Log.error(`Error while requesting ${url} with body ${JSON.stringify(body || {})} and query ${JSON.stringify(query || {})}`)
