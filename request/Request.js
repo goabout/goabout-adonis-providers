@@ -30,7 +30,7 @@ class Request {
    * If request did not pass at all or gave back 400/500 errors, then it will throw a error passing statusCode and a body of erorrs. This error can be reused and sent right to the client
    */
 
-  async send({ url, method, token, body, query, headers, useCache, errorHandler }) {
+  async send({ url, method, token, body, query, headers, useCache, forceCacheUpdate, errorHandler }) {
     let response = null
     if (!method) method = 'GET' // eslint-disable-line
 
@@ -67,7 +67,7 @@ class Request {
 
     this.throwErrorIfFailingRequest({ response, url, errorHandler })
 
-    if (useCache) {
+    if (useCache || forceCacheUpdate) {
       await this.saveToRedis({
         relation: url,
         token,

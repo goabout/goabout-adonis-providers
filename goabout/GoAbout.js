@@ -58,7 +58,7 @@ class GoAbout {
   *
   * If request did not pass at all or gave back 400/500 errors, then it will throw a error passing statusCode and a body of erorrs. This error can be reused and sent right to the client
   */
-  async request({ resource, relation, method, body, query, token, useSupertoken, useCache }) {
+  async request({ resource, relation, method, body, query, token, useSupertoken, useCache, forceCacheUpdate }) {
     let response = null
 
     // If no resource provided, then use root of the api
@@ -83,6 +83,7 @@ class GoAbout {
       query,
       token: requestToken,
       useCache,
+      forceCacheUpdate,
       errorHandler: this.errorHandler
     })
 

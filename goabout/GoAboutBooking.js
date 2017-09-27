@@ -14,7 +14,37 @@ class GoAboutBooking extends HALResource {
     this.$Log = GoAboutInstance.$Log
     this.$Raven = GoAboutInstance.$Raven
 
+    this.$alterableProperties = ['price']
     this.$shownProperties = ['name', 'description', 'logoHref', 'properties']
+  }
+
+  async save() {
+    await this.$GoAbout.request({
+      resource: this,
+      method: 'PUT',
+      relation: 'self',
+      body: _.pick(this, this.$alterableProperties)
+    })
+
+    await this.refresh()
+  }
+
+  async refresh() {
+    const newBookingResource = await this.$GoAbout.request({
+      resource: this,
+      method: 'GET',
+      relation: 'self',
+      forceCacheUpdate: true
+    })
+    const newBooking = newBookingResource.halBody
+
+    this.id = this.$GoAbout.getResourceId({ resource: newBooking })
+
+    _.forEach(newBooking, (value, key) => {
+      if (key !== '_links' && key !== '_embedded') this.key = value
+    })
+
+    this.$allBookingKeys = Object.keys(newBooking)
   }
 
   // TODO Tests
@@ -84,10 +114,12 @@ class GoAboutBooking extends HALResource {
     return this.subscription
   }
 
-  toSanitizedHal() {
-    const sanitizedProduct = new HALResource(_.pick(this, this.$shownProperties))
+  toJSON() {
+    return _.pick(this, this.$shownProperties)
+  }
 
-    return sanitizedProduct
+  toSanitizedHal() {
+    return new HALResource(this.toJSON())
   }
 }
 
