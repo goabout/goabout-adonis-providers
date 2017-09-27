@@ -23,7 +23,8 @@ class GoAboutBooking extends HALResource {
       resource: this,
       method: 'PUT',
       relation: 'self',
-      body: _.pick(this, this.$alterableProperties)
+      body: _.pick(this, this.$alterableProperties),
+      useSupertoken: true
     })
 
     await this.refresh()
