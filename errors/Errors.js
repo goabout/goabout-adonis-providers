@@ -1,6 +1,13 @@
 const NE = require('node-exceptions')
 const _ = require('lodash')
 
+const codeToLowerCase = code => _.camelCase(code.replace(/^E_/, ''))
+
+
+/*
+  All the errors except "GENERAL" are deprecated :P
+ */
+
 class Crash extends NE.LogicalException {
   constructor(errorCode, details) {
     super(errorCode, 500)
@@ -76,14 +83,61 @@ class NoResponse extends NE.LogicalException {
   }
 }
 
-module.exports = {
-  BadRequest,
-  Validation,
-  NotFound,
-  Unauthorized,
-  Denied,
-  PassThrough,
-  NoResponse,
-  Raven,
-  Crash
+class General extends NE.LogicalException {
+  constructor({ httpCode, code, details, hint }) {
+    super(code || 'E_UNKNOWN_ERROR', httpCode || 500)
+    this.details = details
+    this.hint = hint
+  }
 }
+
+class Localized extends General {
+  constructor({ httpCode, code, params, antl }) {
+    const codeInLowerCase = codeToLowerCase(code)
+    let details = null
+    let hint = null
+
+    try {
+      details = antl.formatMessage(`errors.${codeInLowerCase}`, params)
+    } catch (e) {
+      try {
+        details = antl.forLocale('en').formatMessage(`errors.${codeInLowerCase}`, params)
+      } catch (e2) {
+        // Do nothing
+      }
+    }
+
+    try {
+      hint = antl.formatMessage(`errors.${codeInLowerCase}.hint`, params)
+    } catch (e) {
+      try {
+        hint = antl.forLocale('en').formatMessage(`errors.${codeInLowerCase}.hint`, params)
+      } catch (e2) {
+            // Do nothing
+      }
+    }
+
+    super({ code, httpCode, details, hint })
+  }
+}
+
+
+class Errors {
+  constructor() {
+    this.BadRequest = BadRequest
+    this.Validation = Validation
+    this.NotFound = NotFound
+    this.Unauthorized = Unauthorized
+    this.Denied = Denied
+    this.PassThrough = PassThrough
+    this.NoResponse = NoResponse
+    this.Raven = Raven
+    this.Crash = Crash
+    this.General = General
+    this.Localized = Localized
+  }
+
+}
+
+
+module.exports = Errors
