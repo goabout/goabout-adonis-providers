@@ -85,7 +85,7 @@ class NoResponse extends NE.LogicalException {
 
 class General extends NE.LogicalException {
   constructor({ httpCode, code, details, hint }) {
-    super(code || 'E_UNKNOWN_ERROR', httpCode || 500)
+    super(code || 'E_UNKNOWN_ERROR', httpCode || 400)
     this.details = details
     this.hint = hint
   }
@@ -97,12 +97,17 @@ class Localized extends General {
     let details = null
     let hint = null
 
+    if (!antl) throw Crash('E_ANTL_WAS_NOT_DEFINED')
+
     try {
       details = antl.formatMessage(`errors.${codeInLowerCase}`, params)
     } catch (e) {
+      console.error('Did not find localization in needed lang')
+
       try {
         details = antl.forLocale('en').formatMessage(`errors.${codeInLowerCase}`, params)
       } catch (e2) {
+        console.error('Did not find localization in fallback lang')
         // Do nothing
       }
     }
