@@ -97,7 +97,7 @@ class Localized extends General {
     let details = null
     let hint = null
 
-    if (!antl) throw Crash('E_ANTL_WAS_NOT_DEFINED')
+    if (!antl) throw new Crash('E_ANTL_WAS_NOT_DEFINED')
 
     try {
       details = antl.formatMessage(`errors.${codeInLowerCase}`, params)

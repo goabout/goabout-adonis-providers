@@ -122,7 +122,11 @@ class GoAbout {
     const api = await this.getRoot()
 
     this.user = api.getEmbed('http://rels.goabout.com/authenticated-user')
-    if (this.user) this.user.id = this.getResourceId({ resource: this.user })
+    if (this.user) {
+      this.user.id = this.getResourceId({ resource: this.user })
+      if (api.getLink('http://rels.goabout.com/agencies')) this.user.superuser = true
+    }
+
 
     return this.user
   }
