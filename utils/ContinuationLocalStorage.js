@@ -16,10 +16,9 @@ class ContinuationLocalStorage {
 
 class ContinuationLocalStorageMiddleware {
   async handle(ctx, next) {
-    session.run(() => {
-      session.set('hui', 123)
-      session.set('session', uuid())
-      next()
+    await session.runPromise(async () => {
+      session.set('session', uuid().split('-')[4])
+      await next()
     })
   }
 }
