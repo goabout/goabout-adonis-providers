@@ -82,7 +82,7 @@ class GoAboutBooking extends HALResource {
     if (!this.events) await this.getEvents()
 
     const event = _.findLast(this.events, { type: eventTypes[type] || type })
-    const eventData = event ? event.data : null
+    const eventData = event !== undefined ? event.data : null
 
       // Throw error if not found
     if (!ignoreMissing && !eventData) {
