@@ -9,8 +9,9 @@ class LoggerProvider extends ServiceProvider {
       const papertrailHost = Env.get('PAPERTRAIL_HOST', null)
       const papertrailPort = Env.get('PAPERTRAIL_PORT', null)
       const papertrailHostname = Env.get('PAPERTRAIL_HOSTNAME', null)
+      const nodeEnv = Env.get('NODE_ENV', 'production')
       const CLS = use('GoAbout/providers/ContinuationLocalStorage')
-      return Logger(loggingLevel, papertrailHost, papertrailPort, papertrailHostname, CLS)
+      return Logger(loggingLevel, papertrailHost, papertrailPort, papertrailHostname, nodeEnv, CLS)
     })
   }
 

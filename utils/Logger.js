@@ -1,7 +1,7 @@
 const winston = require('winston')
 const Papertrail = require('winston-papertrail').Papertrail
 
-const initializeLogger = (loggingLevel, papertrailHost, papertrailPort, papertrailHostname, CLS) => {
+const initializeLogger = (loggingLevel, papertrailHost, papertrailPort, papertrailHostname, nodeEnv, CLS) => {
   const transports = [
     new (winston.transports.Console)({ colorize: true })
   ]
@@ -28,7 +28,7 @@ const initializeLogger = (loggingLevel, papertrailHost, papertrailPort, papertra
     level: loggingLevel
   })
 
-  if (CLS) {
+  if (CLS && nodeEnv === 'production') {
     logger.rewriters.push((level, msg, meta) => {
       const session = CLS.get('session')
       if (session) { meta.sId = session }

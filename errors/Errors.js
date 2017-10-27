@@ -3,48 +3,6 @@ const _ = require('lodash')
 
 const codeToLowerCase = code => _.camelCase(code.replace(/^E_/, ''))
 
-
-/*
-  All the errors except "GENERAL" are deprecated :P
- */
-
-class Crash extends NE.LogicalException {
-  constructor(errorCode, details) {
-    super(errorCode, 500)
-    this.details = details
-  }
-}
-
-class BadRequest extends NE.LogicalException {
-  constructor(errorCode, details) {
-    super(errorCode, 400)
-    this.details = details || 'Bad request'
-    // TODO Add "action", e. g. a hint to the user of how he can solve the issue
-  }
-}
-
-class NotFound extends NE.LogicalException {
-  constructor(details) {
-    super('E_NOT_FOUND', 404)
-    this.details = details || 'Not found'
-  }
-}
-
-class Unauthorized extends NE.LogicalException {
-  constructor(details) {
-    super('E_UNAUTHORIZED', 401)
-    this.details = details || 'Invalid access token'
-  }
-}
-
-// TODO Stop using error code as 1st arqument
-class Denied extends NE.LogicalException {
-  constructor(errorCode, details) {
-    super(errorCode || 'E_ACCESS_DENIED', 403)
-    this.details = details || 'You don\'t have rights for this action'
-  }
-}
-
 class Validation extends NE.LogicalException {
   constructor(errorsArray) {
     super('E_VALIDATION_FAILED', 422)
@@ -61,85 +19,117 @@ class Validation extends NE.LogicalException {
   }
 }
 
-class PassThrough extends NE.LogicalException {
-  constructor(status, body) {
-    super((body && body.code) ? body.code : 'E_UNKNOWN_ERROR', status || 500)
-    this.details = (body && body.message) ? body.message : undefined // Because GoAbout sends details as "Message"
-    Object.assign(this, _.omit(body || {}, ['message']))
+
+class Errors {
+  constructor(Antl, Raven, CLS) {
+    const that = this
+
+    this.$Antl = Antl
+    this.$Raven = Raven
+    this.$CLS = CLS
+
+    class General extends NE.LogicalException {
+      constructor({ httpCode, message, details, hint, params } = {}) {
+        super(message || 'E_UNKNOWN_ERROR', httpCode || 500)
+
+        const localized = that.localize({ message, params })
+        this.details = details || localized.details
+        this.hint = hint || localized.hint
+      }
+    }
+
+    class Crash extends General {
+      }
+
+    class BadRequest extends General {
+      constructor(args) {
+        args.message = args.message || 'E_BAD_REQUEST'
+        args.httpCode = args.httpCode || 400
+        super(args)
+      }
+    }
+
+    class NotFound extends General {
+      constructor(args) {
+        args.message = args.message || 'E_NOT_FOUND'
+        args.httpCode = args.httpCode || 404
+        super(args)
+      }
+    }
+
+    class Unauthorized extends General {
+      constructor(args) {
+        args.message = args.message || 'E_UNAUTHORIZED'
+        args.httpCode = args.httpCode || 401
+        super(args)
+      }
+    }
+
+    class Denied extends General {
+      constructor(args) {
+        args.message = args.message || 'E_ACCESS_DENIED'
+        args.httpCode = args.httpCode || 403
+        super(args)
+      }
+    }
+
+    class NoResponse extends General {
+      constructor(args) {
+        args.message = 'E_NO_RESPONSE_FROM_THE_SIDE_PARTY'
+        super(args)
+      }
+    }
+
+    // Specially for our other Adonis backends like Ovelo
+    class PassThrough extends General {
+      constructor(args) {
+        args.message = args.code || 'E_PROVIDER_FAILED'
+        super(args)
+      }
+    }
+
+    this.General = General
+    this.Crash = Crash
+    this.BadRequest = BadRequest
+    this.NotFound = NotFound
+    this.Unauthorized = Unauthorized
+    this.Denied = Denied
+    this.NoResponse = NoResponse
+    this.PassThrough = PassThrough
   }
-}
 
-class Raven extends NE.LogicalException {
-  constructor(data) {
-    super(data.type || 'E_INTERNAL_ERROR', 500)
-    Object.assign(this, _.omit(data, ['type']))
-  }
-}
-
-class NoResponse extends NE.LogicalException {
-  constructor(errorCode, details) {
-    super(errorCode || 'NO_RESPONSE_FROM_SIDE_PARTY', 500)
-    this.details = details
-  }
-}
-
-class General extends NE.LogicalException {
-  constructor({ httpCode, code, details, hint }) {
-    super(code || 'E_UNKNOWN_ERROR', httpCode || 400)
-    this.details = details
-    this.hint = hint
-  }
-}
-
-class Localized extends General {
-  constructor({ httpCode, code, params, antl }) {
-    const codeInLowerCase = codeToLowerCase(code)
-    let details = null
-    let hint = null
-
-    if (!antl) throw new Crash('E_ANTL_WAS_NOT_DEFINED')
+  localize({ message, params }) {
+    const localized = {}
+    const defaultLocale = 'en'
+    const userLocale = this.$CLS.get('locale')
+    const officiallySupportedLocales = ['en', 'nl']
+    const codeInLowerCase = codeToLowerCase(message)
 
     try {
-      details = antl.formatMessage(`errors.${codeInLowerCase}`, params)
+      localized.details = this.$Antl.forLocale(userLocale).formatMessage(`errors.${codeInLowerCase}`, params)
     } catch (e) {
-      console.error('Did not find localization in needed lang')
+      if (officiallySupportedLocales.includes(userLocale)) {
+        this.$Raven.captureException(new NE.LogicalException(`No localization for ${message} (${codeInLowerCase}) in '${userLocale}' language`, 500))
+      }
 
       try {
-        details = antl.forLocale('en').formatMessage(`errors.${codeInLowerCase}`, params)
+        localized.details = this.$Antl.forLocale(defaultLocale).formatMessage(`errors.${codeInLowerCase}`, params)
       } catch (e2) {
-        console.error('Did not find localization in fallback lang')
-        // Do nothing
+        this.$Raven.captureException(new NE.LogicalException(`No localization for ${message} (${codeInLowerCase}) in fallback language '${userLocale}'`, 500))
       }
     }
 
     try {
-      hint = antl.formatMessage(`errors.${codeInLowerCase}.hint`, params)
+      localized.hint = this.$Antl.forLocale(userLocale).formatMessage(`errors.${codeInLowerCase}.hint`, params)
     } catch (e) {
       try {
-        hint = antl.forLocale('en').formatMessage(`errors.${codeInLowerCase}.hint`, params)
+        localized.hint = this.$Antl.forLocale(defaultLocale).formatMessage(`errors.${codeInLowerCase}.hint`, params)
       } catch (e2) {
             // Do nothing
       }
     }
 
-    super({ code, httpCode, details, hint })
-  }
-}
-
-
-class Errors {
-  constructor() {
-    this.BadRequest = BadRequest
-    this.Validation = Validation
-    this.NotFound = NotFound
-    this.Unauthorized = Unauthorized
-    this.Denied = Denied
-    this.PassThrough = PassThrough
-    this.NoResponse = NoResponse
-    this.Raven = Raven
-    this.Crash = Crash
-    this.General = General
-    this.Localized = Localized
+    return localized
   }
 
 }
