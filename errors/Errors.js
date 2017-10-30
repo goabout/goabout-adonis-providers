@@ -32,9 +32,8 @@ class Errors {
       constructor({ httpCode, message, details, hint, params } = {}) {
         super(message || 'E_UNKNOWN_ERROR', httpCode || 500)
 
-        const localized = that.localize({ message, params })
-        this.details = details || localized.details
-        this.hint = hint || localized.hint
+        this.details = details || that.localize({ message, params })
+        this.hint = hint || that.localize({ message, params, hint: true })
       }
     }
 
@@ -98,36 +97,28 @@ class Errors {
     this.PassThrough = PassThrough
   }
 
-  localize({ message, params }) {
-    const localized = {}
+  localize({ message, params, hint }) {
+    let localized = null
     const defaultLocale = 'en'
     const userLocale = this.$CLS.get('locale')
     const officiallySupportedLocales = ['en', 'nl']
-    const codeInLowerCase = codeToLowerCase(message)
+
+    const codeInLowerCase = codeToLowerCase(message) + (hint ? '.hint' : '')
 
     try {
-      localized.details = this.$Antl.forLocale(userLocale).formatMessage(`errors.${codeInLowerCase}`, params)
+      localized = this.$Antl.forLocale(userLocale).formatMessage(`errors.${codeInLowerCase}`, params)
     } catch (e) {
-      if (officiallySupportedLocales.includes(userLocale)) {
+      if (officiallySupportedLocales.includes(userLocale) && !hint) {
         this.$Raven.captureException(new NE.LogicalException(`No localization for ${message} (${codeInLowerCase}) in '${userLocale}' language`, 500))
       }
 
       try {
-        localized.details = this.$Antl.forLocale(defaultLocale).formatMessage(`errors.${codeInLowerCase}`, params)
+        localized = this.$Antl.forLocale(defaultLocale).formatMessage(`errors.${codeInLowerCase}`, params)
       } catch (e2) {
-        this.$Raven.captureException(new NE.LogicalException(`No localization for ${message} (${codeInLowerCase}) in fallback language '${userLocale}'`, 500))
+        if (!hint) this.$Raven.captureException(new NE.LogicalException(`No localization for ${message} (${codeInLowerCase}) in fallback language '${userLocale}'`, 500))
       }
     }
 
-    try {
-      localized.hint = this.$Antl.forLocale(userLocale).formatMessage(`errors.${codeInLowerCase}.hint`, params)
-    } catch (e) {
-      try {
-        localized.hint = this.$Antl.forLocale(defaultLocale).formatMessage(`errors.${codeInLowerCase}.hint`, params)
-      } catch (e2) {
-            // Do nothing
-      }
-    }
 
     return localized
   }

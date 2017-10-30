@@ -86,10 +86,9 @@ class GoAboutBooking extends HALResource {
 
       // Throw error if not found
     if (!ignoreMissing && !eventData) {
-      const internalError = new this.$Errors.Raven({ type: 'E_NO_EVENT_FOUND', details: `${type} event for ${this.getLink('self').href} was not found` })
+      const internalError = new this.$Errors.General({ message: 'E_NO_EVENT_FOUND', details: `${type} event for ${this.getLink('self').href} was not found` })
       this.$Raven.captureException(internalError)
-      this.$Log.error({ type: 'E_NO_EVENT_FOUND', details: `${type} event for ${this.getLink('self').href} was not found` })
-      throw new this.$Errors.Crash('E_NO_EVENT_FOUND', 'Something went wrong while managing your booking!')
+      throw new this.$Errors.Crash({ message: 'E_NO_EVENT_FOUND' })
     }
 
     return eventData

@@ -8,7 +8,7 @@ class RavenProvider extends ServiceProvider {
   register() {
     this.app.singleton('GoAbout/providers/Raven', () => {
       const Env = use('Env')
-      const Log = use('Log')
+      const Log = use('GoAbout/providers/Logger')
       const CLS = use('GoAbout/providers/ContinuationLocalStorage')
       const ravenToken = Env.get('RAVEN', null)
       let ravenInstance = null
@@ -21,9 +21,8 @@ class RavenProvider extends ServiceProvider {
         Raven.captureException = exception => {
           exception.session = CLS.get('session')
 
-          Log.error(`${exception.name || ''} ${exception.message || ''} ${exception.details || ''}`)
-          Log.error(JSON.stringify(_.omit(exception, 'stack')))
           Log.error(exception.stack)
+          Log.error(JSON.stringify(_.omit(exception, 'stack')))
 
           Raven._captureException(exception)
         }

@@ -68,7 +68,7 @@ class GoAbout {
     let requestUrl = resourceToCall.getLink(relation)
     requestUrl = requestUrl ? requestUrl.href : undefined
     if (!requestUrl || !requestUrl.length) {
-      this.$Raven.captureException(new this.$Errors.Raven({ type: 'E_MISSING_RELATION', relation }))
+      this.$Raven.captureException(new this.$Errors.Crash({ message: 'E_MISSING_RELATION', details: relation }))
       throw new this.$Errors.BadRequest()
     }
 

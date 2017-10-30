@@ -6,7 +6,7 @@ class ErrorsProvider extends ServiceProvider {
   register() {
     const CLS = use('GoAbout/providers/ContinuationLocalStorage')
     const Antl = use('Antl')
-    const Raven = use('Raven')
+    const Raven = use('GoAbout/providers/Raven')
 
     this.app.singleton('GoAbout/providers/Errors', () => new Errors(Antl, Raven, CLS))
   }
