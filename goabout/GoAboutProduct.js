@@ -18,6 +18,11 @@ class GoAboutProduct extends HALResource {
     this.$shownProperties = ['id', 'name', 'logoHref', 'moreInfoHref', 'description', 'categories', 'supportEmail', 'internalProperties']
   }
 
+  // To get product/subscription using supertoken (gives back priceRule etc)
+  async getFull() {
+    return this.$GoAbout.getProductOrSubscription({ url: this.getLink('self').href })
+  }
+
   toSanitizedHal() {
     const sanitizedProduct = new HALResource(_.pick(this, this.$shownProperties))
     if (this.internalProperties) sanitizedProduct.provider = this.internalProperties.provider
