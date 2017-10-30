@@ -1,5 +1,5 @@
 const { ServiceProvider } = require('@adonisjs/fold') // eslint-disable-line
-const { ContinuationLocalStorage, ContinuationLocalStorageMiddleware } = require('../utils/continuationLocalStorage')
+const { ContinuationLocalStorage, ContinuationLocalStorageMiddleware } = require('../utils/ContinuationLocalStorage')
 
 class ContinuationLocalStorageProvider extends ServiceProvider {
 
