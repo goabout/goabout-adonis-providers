@@ -62,7 +62,7 @@ class Request {
       this.$Log.error(`Error while requesting ${url} with body ${JSON.stringify(body || {})} and query ${JSON.stringify(query || {})}`)
       this.$Log.error(err)
       this.$Raven.captureException(err)
-      throw new this.$Errors.NoResponse('E_PROVIDER_API_IS_DOWN')
+      throw new this.$Errors.NoResponse()
     }
 
     this.throwErrorIfFailingRequest({ response, url, errorHandler })
@@ -108,44 +108,44 @@ class Request {
       this.$Log.info(`Failed ${url} with answer ${JSON.stringify(response.body)}`)
 
       let error = null
-      const { errorCode, details } = errorHandler ? errorHandler(response) : this.defaultErrorHandler(response)
+      const { message, details, hint } = errorHandler ? errorHandler(response) : this.defaultErrorHandler(response)
 
       switch (response.statusCode) {
         case 400:
-          error = new this.$Errors.BadRequest(errorCode, details)
+          error = new this.$Errors.BadRequest({ message, details, hint })
           break
         case 401:
-          error = new this.$Errors.Unauthorized(details)
+          error = new this.$Errors.Unauthorized({ message, details, hint })
           break
         case 403:
-          error = new this.$Errors.Denied(errorCode, details)
+          error = new this.$Errors.Denied({ message, details, hint })
           break
         case 404:
-          error = new this.$Errors.NotFound(details)
+          error = new this.$Errors.NotFound({ message, details, hint })
           break
         default:
-          error = new this.$Errors.PassThrough(response.statusCode, Object.assign({ code: 'E_PROVIDER_FAILED', details }, response.body))
+          error = new this.$Errors.PassThrough({ message, details, hint })
       }
 
       error.providerUrl = url
       error.providerResponse = response.body
 
-      this.$Raven.captureException(error)
-      this.$Log.error(error)
       throw error
     }
   }
 
   defaultErrorHandler(response) {
-    let errorCode = null
+    let message = null
     let details = null
+    let hint = null
 
     if (response && response.body) {
-      errorCode = response.body.code ? response.body.code : null
+      message = response.body.code ? response.body.code : null
       details = response.body.details ? response.body.details : null
+      hint = response.body.hint ? response.body.hint : null
     }
 
-    return { errorCode, details }
+    return { message, details, hint }
   }
 
   async retrieveFromRedis({ relation, token }) {

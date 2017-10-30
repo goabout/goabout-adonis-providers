@@ -20,9 +20,11 @@ class RavenProvider extends ServiceProvider {
         Raven._captureException = Raven.captureException
         Raven.captureException = exception => {
           exception.session = CLS.get('session')
+
           Log.error(`${exception.name || ''} ${exception.message || ''} ${exception.details || ''}`)
           Log.error(JSON.stringify(_.omit(exception, 'stack')))
           Log.error(exception.stack)
+
           Raven._captureException(exception)
         }
       } else {

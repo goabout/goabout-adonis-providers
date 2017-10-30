@@ -94,11 +94,11 @@ class GoAbout {
   // Attention! This error handler is only triggered automatically if requests are made via this.request
   errorHandler(response) {
     let details = null
-    const errorCode = null
+    const message = null
 
     if (response && response.body && response.body.message) details = response.body.message
 
-    return { errorCode, details }
+    return { message, details }
   }
 
   /*
