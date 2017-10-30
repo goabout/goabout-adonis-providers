@@ -3,23 +3,6 @@ const _ = require('lodash')
 
 const codeToLowerCase = code => _.camelCase(code.replace(/^E_/, ''))
 
-class Validation extends NE.LogicalException {
-  constructor(errorsArray) {
-    super('E_VALIDATION_FAILED', 422)
-    this.details = 'One or more attributes are incorrect'
-    this.validationErrors = {}
-
-    // Fill validation errors
-    errorsArray.forEach(error => {
-      if (!this.validationErrors[error.field]) this.validationErrors[error.field] = {}
-      this.validationErrors[error.field][error.validation] = {
-        message: error.message
-      }
-    })
-  }
-}
-
-
 class Errors {
   constructor(Antl, Raven, CLS) {
     const that = this
@@ -87,6 +70,21 @@ class Errors {
       }
     }
 
+    class Validation extends General {
+      constructor(errorsArray) {
+        super({ httpCode: 422, message: 'E_VALIDATION_FAILED' })
+        this.validationErrors = {}
+
+        // Fill validation errors
+        errorsArray.forEach(error => {
+          if (!this.validationErrors[error.field]) this.validationErrors[error.field] = {}
+          this.validationErrors[error.field][error.validation] = {
+            message: error.message
+          }
+        })
+      }
+    }
+
     this.General = General
     this.Crash = Crash
     this.BadRequest = BadRequest
@@ -95,6 +93,7 @@ class Errors {
     this.Denied = Denied
     this.NoResponse = NoResponse
     this.PassThrough = PassThrough
+    this.Validation = Validation
   }
 
   localize({ message, params, hint }) {

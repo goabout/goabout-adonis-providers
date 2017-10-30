@@ -1,7 +1,6 @@
 const _ = require('lodash')
 const HALResource = require('../utils/HALResource')
 const eventTypes = require('./eventTypes')
-const GoAboutProduct = require('./GoAboutProduct')
 
 class GoAboutBooking extends HALResource {
   constructor(booking, GoAboutInstance) {
