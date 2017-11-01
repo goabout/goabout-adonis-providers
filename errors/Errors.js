@@ -24,7 +24,7 @@ class Errors {
       }
 
     class BadRequest extends General {
-      constructor(args) {
+      constructor(args = {}) {
         args.message = args.message || 'E_BAD_REQUEST'
         args.httpCode = args.httpCode || 400
         super(args)
@@ -32,7 +32,7 @@ class Errors {
     }
 
     class NotFound extends General {
-      constructor(args) {
+      constructor(args = {}) {
         args.message = args.message || 'E_NOT_FOUND'
         args.httpCode = args.httpCode || 404
         super(args)
@@ -40,7 +40,7 @@ class Errors {
     }
 
     class Unauthorized extends General {
-      constructor(args) {
+      constructor(args = {}) {
         args.message = args.message || 'E_UNAUTHORIZED'
         args.httpCode = args.httpCode || 401
         super(args)
@@ -48,7 +48,7 @@ class Errors {
     }
 
     class Denied extends General {
-      constructor(args) {
+      constructor(args = {}) {
         args.message = args.message || 'E_ACCESS_DENIED'
         args.httpCode = args.httpCode || 403
         super(args)
@@ -56,7 +56,7 @@ class Errors {
     }
 
     class NoResponse extends General {
-      constructor(args) {
+      constructor(args = {}) {
         args.message = 'E_NO_RESPONSE_FROM_THE_SIDE_PARTY'
         super(args)
       }
@@ -64,7 +64,7 @@ class Errors {
 
     // Specially for our other Adonis backends like Ovelo
     class PassThrough extends General {
-      constructor(args) {
+      constructor(args = {}) {
         args.message = args.code || 'E_PROVIDER_FAILED'
         super(args)
       }
