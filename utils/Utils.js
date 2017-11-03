@@ -24,6 +24,17 @@ class Utils {
     }
   }
 
+  async asyncInParallel(arr, fn) {
+    if (_.isArray(arr)) {
+      await Promise.all(arr.map(await fn))
+    } else if (_.isObject(arr)) {
+      const keys = Object.keys(arr)
+      await Promise.all(keys.map(async key => {
+        await fn(arr[key], key)
+      }))
+    }
+  }
+
 
   outputSpawnResult(result) {
     if (result.stderr && result.stderr.toString().length) {
