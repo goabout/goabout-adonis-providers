@@ -13,7 +13,8 @@ class Errors {
 
     class General extends NE.LogicalException {
       constructor({ httpCode, message, details, hint, params } = {}) {
-        super(message || 'E_UNKNOWN_ERROR', httpCode || 500)
+        if (!message) message = 'E_FATAL_ERROR' //eslint-disable-line
+        super(message, httpCode || 500)
 
         this.details = details || that.localize({ message, params })
         this.hint = hint || that.localize({ message, params, hint: true })

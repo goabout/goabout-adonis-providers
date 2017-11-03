@@ -1,4 +1,3 @@
-const _ = require('lodash')
 const GoAboutProduct = require('./GoAboutProduct')
 
 class GoAboutSubscription extends GoAboutProduct {
