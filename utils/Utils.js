@@ -15,6 +15,7 @@ class Utils {
     } else if (_.isObject(arr)) {
       const keys = Object.keys(arr)
 
+      // Apparently, for ... of syntax works fine with async while forEach ignores it
       // eslint-disable-next-line
       for (const key of keys) {
         const element = arr[key]
@@ -24,6 +25,7 @@ class Utils {
     }
   }
 
+  // If you're wondering about strange Promise & Map combination https://stackoverflow.com/questions/37576685/using-async-await-with-a-foreach-loop
   async asyncInParallel(arr, fn) {
     if (_.isArray(arr)) {
       await Promise.all(arr.map(await fn))

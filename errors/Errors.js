@@ -76,7 +76,7 @@ class Errors {
         super({ httpCode: 422, message: 'E_VALIDATION_FAILED' })
         this.validationErrors = {}
 
-        const arrayToParse = errorsArray.messages ? errorsArray.messages : errorsArray
+        const arrayToParse = errorsArray.messages ? errorsArray.messages() : errorsArray
 
         arrayToParse.forEach(error => {
           if (!this.validationErrors[error.field]) this.validationErrors[error.field] = {}
