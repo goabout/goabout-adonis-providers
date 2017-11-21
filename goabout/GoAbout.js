@@ -148,7 +148,7 @@ class GoAbout {
 
       subscriptionResources.forEach(resource => {
         const subscription = resource.getEmbed('http://rels.goabout.com/product')
-        if (subscription && subscription.isSubscription) subscriptions.push(new GoAboutSubscription(subscription, this)) //eslint-disable-line
+        if (subscription && subscription.isSubscription) subscriptions.push(new GoAboutSubscription(subscription, resource.properties, this)) //eslint-disable-line
       })
 
       this.$subscriptions = subscriptions

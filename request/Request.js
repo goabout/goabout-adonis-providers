@@ -193,7 +193,7 @@ class Request {
 
   constructRedisKey({ relation, token }) {
     if (!relation) {
-      this.$Raven.captureException(new this.$Errors.$Raven({ type: 'E_NO_RELATION_FOR_RAVEN' }))
+      this.$Raven.captureException(new this.$Errors.Crash({ message: 'E_NO_RELATION_FOR_RAVEN' }))
       return null
     }
 

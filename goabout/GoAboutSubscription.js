@@ -1,10 +1,11 @@
 const GoAboutProduct = require('./GoAboutProduct')
 
 class GoAboutSubscription extends GoAboutProduct {
-  constructor(subscription, GoAboutInstance) {
+  constructor(subscription, properties, GoAboutInstance) {
     // Properties which will be passed to users
     super(subscription, GoAboutInstance)
 
+    this.properties = properties
     this.applicableProducts = []
   }
 

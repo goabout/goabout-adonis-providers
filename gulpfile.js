@@ -50,6 +50,7 @@ gulp.task('autotest', gulpsync.sync(['test:mocha:ignoreErrors']), () => {
   gulp.watch(_.union(config.SPEC_FILES, config.SOURCE_FILES), ['test:mocha:ignoreErrors'])
 })
 
+
 // Internal tasks
 const mochaConfig = {
   reporter: 'spec',
