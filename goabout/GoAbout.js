@@ -178,7 +178,7 @@ class GoAbout {
     if (!url) url = await this.generateProductHref(id) // eslint-disable-line
 
     const productResponse = await this.$Request.send({ url, token: this.supertoken, useCache: true })
-    const product = productResponse.halBody.isSubscription ? new GoAboutSubscription(productResponse.halBody, this) : new GoAboutProduct(productResponse.halBody, this)
+    const product = productResponse.halBody.isSubscription ? new GoAboutSubscription(productResponse.halBody, {}, this) : new GoAboutProduct(productResponse.halBody, this)
 
     this.$Log.info(`Got product/subscription ${url}`)
 
