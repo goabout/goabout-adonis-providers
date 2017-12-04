@@ -12,12 +12,13 @@ class Errors {
     this.$CLS = CLS
 
     class General extends NE.LogicalException {
-      constructor({ httpCode, message, details, hint, params } = {}) {
+      constructor({ httpCode, message, details, hint, params, validationErrors } = {}) {
         if (!message) message = 'E_FATAL_ERROR' //eslint-disable-line
         super(message, httpCode || 500)
 
         this.details = details || that.localize({ message, params })
         this.hint = hint || that.localize({ message, params, hint: true })
+        if (validationErrors) this.validationErrors = validationErrors
       }
     }
 
@@ -66,7 +67,7 @@ class Errors {
     // Specially for our other Adonis backends like Ovelo
     class PassThrough extends General {
       constructor(args = {}) {
-        args.message = args.code || 'E_PROVIDER_FAILED'
+        args.message = args.message || 'E_PROVIDER_FAILED'
         super(args)
       }
     }

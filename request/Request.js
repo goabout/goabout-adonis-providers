@@ -108,7 +108,7 @@ class Request {
       this.$Log.info(`Failed ${url} with answer ${JSON.stringify(response.body)}`)
 
       let error = null
-      const { message, details, hint } = errorHandler ? errorHandler(response) : this.defaultErrorHandler(response)
+      const { message, details, hint, validationErrors } = errorHandler ? errorHandler(response) : this.defaultErrorHandler(response)
 
       switch (response.statusCode) {
         case 400:
@@ -124,7 +124,7 @@ class Request {
           error = new this.$Errors.NotFound({ message, details, hint })
           break
         default:
-          error = new this.$Errors.PassThrough({ message, details, hint })
+          error = new this.$Errors.PassThrough({ httpCode: response.statusCode, message, details, hint, validationErrors })
       }
 
       error.providerUrl = url
@@ -138,14 +138,16 @@ class Request {
     let message = null
     let details = null
     let hint = null
+    let validationErrors = null
 
     if (response && response.body) {
       message = response.body.code ? response.body.code : null
       details = response.body.details ? response.body.details : null
       hint = response.body.hint ? response.body.hint : null
+      validationErrors = response.body.validationErrors ? response.body.validationErrors : null
     }
 
-    return { message, details, hint }
+    return { message, details, hint, validationErrors }
   }
 
   async retrieveFromRedis({ relation, token }) {
