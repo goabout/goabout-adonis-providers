@@ -113,6 +113,16 @@ class GoAboutBooking extends HALResource {
     return this.subscription
   }
 
+  async getUser() {
+    if (!this.user) {
+      this.user = await this.$GoAbout.getUser({
+        url: this.getLink('http://rels.goabout.com/user').href
+      })
+    }
+
+    return this.user
+  }
+
   toJSON() {
     return _.pick(this, this.$shownProperties)
   }

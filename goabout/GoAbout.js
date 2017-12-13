@@ -118,7 +118,19 @@ class GoAbout {
     return this.$root
   }
 
-  async getUser() {
+  // If no url, getting self
+  async getUser({ url } = {}) {
+    if (!url) return this.getSelfUser()
+
+    const userResponse = await this.$Request.send({ url, token: this.supertoken, useCache: true })
+
+    if (!userResponse.halBody) throw new this.$Errors.Crash('E_FAILED_TO_GET_USER')
+
+    this.$Log.info(`Got user ${url}`)
+    return userResponse.halBody
+  }
+
+  async getSelfUser() {
     const api = await this.getRoot()
 
     this.user = api.getEmbed('http://rels.goabout.com/authenticated-user')
