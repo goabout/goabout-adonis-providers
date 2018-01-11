@@ -30,7 +30,7 @@ class Request {
    * If request did not pass at all or gave back 400/500 errors, then it will throw a error passing statusCode and a body of erorrs. This error can be reused and sent right to the client
    */
 
-  async send({ url, method, token, body, query, headers, useCache, forceCacheUpdate, errorHandler }) {
+  async send({ url, method, token, body, query, headers, useCache, forceCacheUpdate, errorHandler, doNotReportFailing }) {
     let response = null
     if (!method) method = 'GET' // eslint-disable-line
 
@@ -59,9 +59,11 @@ class Request {
         timeout: 30000
       })
     } catch (err) {
-      this.$Log.error(`Error while requesting ${url} with body ${JSON.stringify(body || {})} and query ${JSON.stringify(query || {})}`)
-      this.$Log.error(err)
-      this.$Raven.captureException(err)
+      if (!doNotReportFailing) {
+        this.$Log.error(`Error while requesting ${url} with body ${JSON.stringify(body || {})} and query ${JSON.stringify(query || {})}`)
+        this.$Log.error(err)
+        this.$Raven.captureException(err)
+      }
       throw new this.$Errors.NoResponse()
     }
 
