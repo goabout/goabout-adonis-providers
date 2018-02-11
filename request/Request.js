@@ -78,7 +78,7 @@ class Request {
     }
 
      // Filter all the extra stuff from the request obj
-    return _.pick(response, ['statusCode', 'body', 'halBody', 'headers'])
+    return _.pick(response, ['statusCode', 'body', 'halBody', 'headers', 'elapsedTime'])
   }
 
   // Original request library wrapped as promise

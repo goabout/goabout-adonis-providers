@@ -52,8 +52,6 @@ class GoAboutSubscription extends GoAboutProduct {
 
     return sanitizedProduct
   }
-
-  // static getUserSubscription
 }
 
 module.exports = GoAboutSubscription

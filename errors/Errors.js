@@ -117,7 +117,7 @@ class Errors {
       try {
         localized = this.$Antl.forLocale(defaultLocale).formatMessage(`errors.${codeInLowerCase}`, params)
       } catch (e2) {
-        if (!hint) this.$Raven.captureException(new NE.LogicalException(`No localization for ${message} (${codeInLowerCase}) in fallback language '${userLocale}'`, 500))
+        if (!hint) this.$Raven.captureException(new NE.LogicalException(`No localization for ${message} (${codeInLowerCase}) in fallback language '${defaultLocale}'`, 500))
       }
     }
 
