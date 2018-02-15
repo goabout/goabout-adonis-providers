@@ -103,13 +103,9 @@ class GoAboutBooking extends HALResource {
 
   async getSubscription() {
     const subscriptionHref = await this.getEvent({ type: 'SUBSCRIPTION_HREF' })
-
-    if (!this.subscription) {
-      this.subscription = await this.$GoAbout.getProductOrSubscription({
-        url: subscriptionHref
-      })
+    if (subscriptionHref) {
+      this.subscription = await this.$GoAbout.getUserSubscription({ subscriptionHref })
     }
-
     return this.subscription
   }
 
