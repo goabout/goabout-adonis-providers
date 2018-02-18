@@ -17,6 +17,7 @@
     "cls-hooked": "^4.2.2",
     "co": "^4.6.0",
     "co-each": "^0.1.0",
+    "jsonwebtoken": "^8.1.1",
     "lodash": "^4.17.4",
     "mixpanel": "^0.7.0",
     "moment": "^2.18.1",
