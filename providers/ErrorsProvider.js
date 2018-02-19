@@ -1,4 +1,5 @@
 const { ServiceProvider } = require('@adonisjs/fold') // eslint-disable-line
+
 const Errors = require('../errors/Errors')
 
 class ErrorsProvider extends ServiceProvider {
