@@ -5,19 +5,38 @@ class Utils {
     this.Log = Log
   }
 
-  // Might not work anymore. Didn't test, it's deprecated code anyway
-  async forEachGeneratorSync(array, cb) {
-    if (_.isArray(array)) {
-      for (let i = 0; i < array.length; ++i) {
-        await cb(array[i], i) //eslint-disable-line
+  async asyncInSequence(arr, fn) {
+    if (_.isArray(arr)) {
+      // eslint-disable-next-line
+      for (const [index, element] of arr.entries()) {
+        // eslint-disable-next-line
+        await fn(element, index)
       }
-    } else if (_.isObject(array)) {
-      const keys = Object.keys(array)
-      for (let i = 0; i < keys.length; ++i) {
-        await cb(array[keys[i]], keys[i])  //eslint-disable-line
+    } else if (_.isObject(arr)) {
+      const keys = Object.keys(arr)
+
+      // Apparently, for ... of syntax works fine with async while forEach ignores it
+      // eslint-disable-next-line
+      for (const key of keys) {
+        const element = arr[key]
+        // eslint-disable-next-line
+        await fn(element, key)
       }
     }
   }
+
+  // If you're wondering about strange Promise & Map combination https://stackoverflow.com/questions/37576685/using-async-await-with-a-foreach-loop
+  async asyncInParallel(arr, fn) {
+    if (_.isArray(arr)) {
+      await Promise.all(arr.map(await fn))
+    } else if (_.isObject(arr)) {
+      const keys = Object.keys(arr)
+      await Promise.all(keys.map(async key => {
+        await fn(arr[key], key)
+      }))
+    }
+  }
+
 
   outputSpawnResult(result) {
     if (result.stderr && result.stderr.toString().length) {

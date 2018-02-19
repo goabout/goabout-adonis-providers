@@ -58,7 +58,7 @@ class GoAbout {
   *
   * If request did not pass at all or gave back 400/500 errors, then it will throw a error passing statusCode and a body of erorrs. This error can be reused and sent right to the client
   */
-  async request({ resource, relation, method, body, query, token, useSupertoken, useCache }) {
+  async request({ resource, relation, method, body, query, token, useSupertoken, useCache, forceCacheUpdate }) {
     let response = null
 
     // If no resource provided, then use root of the api
@@ -68,7 +68,7 @@ class GoAbout {
     let requestUrl = resourceToCall.getLink(relation)
     requestUrl = requestUrl ? requestUrl.href : undefined
     if (!requestUrl || !requestUrl.length) {
-      this.$Raven.captureException(new this.$Errors.Raven({ type: 'E_MISSING_RELATION', relation }))
+      this.$Raven.captureException(new this.$Errors.Crash({ message: 'E_MISSING_RELATION', details: relation }))
       throw new this.$Errors.BadRequest()
     }
 
@@ -83,6 +83,7 @@ class GoAbout {
       query,
       token: requestToken,
       useCache,
+      forceCacheUpdate,
       errorHandler: this.errorHandler
     })
 
@@ -93,11 +94,11 @@ class GoAbout {
   // Attention! This error handler is only triggered automatically if requests are made via this.request
   errorHandler(response) {
     let details = null
-    const errorCode = null
+    const message = null
 
     if (response && response.body && response.body.message) details = response.body.message
 
-    return { errorCode, details }
+    return { message, details }
   }
 
   /*
@@ -117,11 +118,27 @@ class GoAbout {
     return this.$root
   }
 
-  async getUser() {
+  // If no url, getting self
+  async getUser({ url } = {}) {
+    if (!url) return this.getSelfUser()
+
+    const userResponse = await this.$Request.send({ url, token: this.supertoken, useCache: true })
+
+    if (!userResponse.halBody) throw new this.$Errors.Crash('E_FAILED_TO_GET_USER')
+
+    this.$Log.info(`Got user ${url}`)
+    return userResponse.halBody
+  }
+
+  async getSelfUser() {
     const api = await this.getRoot()
 
     this.user = api.getEmbed('http://rels.goabout.com/authenticated-user')
-    if (this.user) this.user.id = this.getResourceId({ resource: this.user })
+    if (this.user) {
+      this.user.id = this.getResourceId({ resource: this.user })
+      if (api.getLink('http://rels.goabout.com/agencies')) this.user.superuser = true
+    }
+
 
     return this.user
   }
@@ -143,7 +160,7 @@ class GoAbout {
 
       subscriptionResources.forEach(resource => {
         const subscription = resource.getEmbed('http://rels.goabout.com/product')
-        if (subscription && subscription.isSubscription) subscriptions.push(new GoAboutSubscription(subscription, this)) //eslint-disable-line
+        if (subscription && subscription.isSubscription) subscriptions.push(new GoAboutSubscription(subscription, resource.properties, this)) //eslint-disable-line
       })
 
       this.$subscriptions = subscriptions
@@ -173,7 +190,7 @@ class GoAbout {
     if (!url) url = await this.generateProductHref(id) // eslint-disable-line
 
     const productResponse = await this.$Request.send({ url, token: this.supertoken, useCache: true })
-    const product = productResponse.halBody.isSubscription ? new GoAboutSubscription(productResponse.halBody, this) : new GoAboutProduct(productResponse.halBody, this)
+    const product = productResponse.halBody.isSubscription ? new GoAboutSubscription(productResponse.halBody, {}, this) : new GoAboutProduct(productResponse.halBody, this)
 
     this.$Log.info(`Got product/subscription ${url}`)
 

@@ -5,25 +5,24 @@ const Logger = require('../utils/Logger')
 const Errors = require('../errors/Errors')
 
 // Global before hook
-before(done => {
-  done()
+before(() => {
 })
 
-after(done => {
-  done()
+after(() => {
 })
 
-beforeEach(function* () {
-  t.Log = Logger('off')
+beforeEach(() => {
+  config.Log = Logger('off')
 
-  t.Raven = {
+  config.Raven = {
     captureException: sandbox.stub()
   }
 
-  t.Errors = Errors
+  config.Errors = new Errors()
+  config.Errors.localize = ({ m }) => m
 })
 
-afterEach(function* () {
-  v = {} //eslint-disable-line
+afterEach(() => {
+  config = {}
   sandbox.restore()
 })

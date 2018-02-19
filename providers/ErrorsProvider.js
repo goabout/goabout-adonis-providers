@@ -4,7 +4,11 @@ const Errors = require('../errors/Errors')
 class ErrorsProvider extends ServiceProvider {
 
   register() {
-    this.app.singleton('GoAbout/providers/Errors', () => Errors)
+    const CLS = use('GoAbout/providers/ContinuationLocalStorage')
+    const Antl = use('Antl')
+    const Raven = use('GoAbout/providers/Raven')
+
+    this.app.singleton('GoAbout/providers/Errors', () => new Errors(Antl, Raven, CLS))
   }
 
   static bare() { return Errors }

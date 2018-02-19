@@ -15,7 +15,12 @@ class GoAboutProduct extends HALResource {
     this.$Raven = GoAboutInstance.$Raven
 
     // Left after sanitizing
-    this.$shownProperties = ['id', 'name', 'logoHref', 'moreInfoHref', 'description', 'categories', 'supportEmail', 'internalProperties']
+    this.$shownProperties = ['id', 'name', 'logoHref', 'moreInfoHref', 'description', 'extendedDescription', 'categories', 'supportEmail', 'internalProperties', 'properties']
+  }
+
+  // To get product/subscription using supertoken (gives back priceRule etc)
+  async getFull() {
+    return this.$GoAbout.getProductOrSubscription({ url: this.getLink('self').href })
   }
 
   toSanitizedHal() {

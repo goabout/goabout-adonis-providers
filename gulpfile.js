@@ -12,7 +12,9 @@ const config = {
   TEMP: 'tmp/',
 
   SOURCE_FILES: [
-    'providers/**/*.js',
+    'providers/*.js',
+    'goabout/*.js',
+    'request/*.js',
     '.env'
   ],
 
@@ -20,14 +22,9 @@ const config = {
 
   SPEC_FILES: [
     'test/bootstrap.spec.js',
-    'providers/*',
-    'goabout/*',
-    'request/*',
-    'utils/*',
-    'errors/*',
-    // If we ignore folders, it still adds them first and hence acts too slow
-    // '!node_modules/**/*',
-    // '!node_modules**/**/*',
+    'test/request/*',
+    'test/goabout/*',
+    'test/utils/*',
   ]
 }
 
@@ -49,6 +46,7 @@ gulp.task('test', gulpsync.sync(['test:mocha']))
 gulp.task('autotest', gulpsync.sync(['test:mocha:ignoreErrors']), () => {
   gulp.watch(_.union(config.SPEC_FILES, config.SOURCE_FILES), ['test:mocha:ignoreErrors'])
 })
+
 
 // Internal tasks
 const mochaConfig = {

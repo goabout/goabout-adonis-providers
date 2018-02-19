@@ -1,5 +1,5 @@
 const assert = require('assert')
-const HALResource = require('./HALResource')
+const HALResource = require('../../utils/HALResource')
 
 const example = {
   _links: {
@@ -234,11 +234,11 @@ describe('HALResource', () => {
     it('use filterCallback', () => {
       const res = new HALResource(clone(example))
 
-      assert.deepEqual(res.getLink('avatar', item => true), example._links.avatar)
+      assert.deepEqual(res.getLink('avatar', () => true), example._links.avatar)
 
       assert.deepEqual(res.getLink('related', item => item.name === 'twitter'), example._links.related[1])
 
-      assert.deepEqual(res.getLink('related', item => true), example._links.related[0])
+      assert.deepEqual(res.getLink('related', () => true), example._links.related[0])
     })
 
     it('use filterCallback w/ default value', () => {
@@ -274,10 +274,10 @@ describe('HALResource', () => {
       assert.deepEqual(embeds, expected)
 
       expected = example._embedded.starred.map(item => new HALResource(item))
-      embeds = res.getEmbeds('starred', item => true)
+      embeds = res.getEmbeds('starred', () => true)
       assert.deepEqual(embeds, expected)
 
-      embeds = res.getEmbeds('starred', item => false)
+      embeds = res.getEmbeds('starred', () => false)
       assert.deepEqual(embeds, [])
     })
 

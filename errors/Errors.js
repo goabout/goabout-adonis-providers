@@ -1,89 +1,131 @@
 const NE = require('node-exceptions')
 const _ = require('lodash')
 
-class Crash extends NE.LogicalException {
-  constructor(errorCode, details) {
-    super(errorCode, 500)
-    this.details = details
-  }
-}
+const codeToLowerCase = code => _.camelCase(code.replace(/^E_/, ''))
 
-class BadRequest extends NE.LogicalException {
-  constructor(errorCode, details) {
-    super(errorCode, 400)
-    this.details = details || 'Bad request'
-    // TODO Add "action", e. g. a hint to the user of how he can solve the issue
-  }
-}
+class Errors {
+  constructor(Antl, Raven, CLS) {
+    const that = this
 
-class NotFound extends NE.LogicalException {
-  constructor(details) {
-    super('E_NOT_FOUND', 404)
-    this.details = details || 'Not found'
-  }
-}
+    this.$Antl = Antl
+    this.$Raven = Raven
+    this.$CLS = CLS
 
-class Unauthorized extends NE.LogicalException {
-  constructor(details) {
-    super('E_UNAUTHORIZED', 401)
-    this.details = details || 'Invalid access token'
-  }
-}
+    class General extends NE.LogicalException {
+      constructor({ httpCode, message, details, hint, params, validationErrors } = {}) {
+        if (!message) message = 'E_FATAL_ERROR' //eslint-disable-line
+        super(message, httpCode || 500)
 
-// TODO Stop using error code as 1st arqument
-class Denied extends NE.LogicalException {
-  constructor(errorCode, details) {
-    super(errorCode || 'E_ACCESS_DENIED', 403)
-    this.details = details || 'You don\'t have rights for this action'
-  }
-}
-
-class Validation extends NE.LogicalException {
-  constructor(errorsArray) {
-    super('E_VALIDATION_FAILED', 422)
-    this.details = 'One or more attributes are incorrect'
-    this.validationErrors = {}
-
-    // Fill validation errors
-    errorsArray.forEach(error => {
-      if (!this.validationErrors[error.field]) this.validationErrors[error.field] = {}
-      this.validationErrors[error.field][error.validation] = {
-        message: error.message
+        this.details = details || that.localize({ message, params })
+        this.hint = hint || that.localize({ message, params, hint: true })
+        if (validationErrors) this.validationErrors = validationErrors
       }
-    })
+    }
+
+    class Crash extends General {
+      }
+
+    class BadRequest extends General {
+      constructor(args = {}) {
+        args.message = args.message || 'E_BAD_REQUEST'
+        args.httpCode = args.httpCode || 400
+        super(args)
+      }
+    }
+
+    class NotFound extends General {
+      constructor(args = {}) {
+        args.message = args.message || 'E_NOT_FOUND'
+        args.httpCode = args.httpCode || 404
+        super(args)
+      }
+    }
+
+    class Unauthorized extends General {
+      constructor(args = {}) {
+        args.message = args.message || 'E_UNAUTHORIZED'
+        args.httpCode = args.httpCode || 401
+        super(args)
+      }
+    }
+
+    class Denied extends General {
+      constructor(args = {}) {
+        args.message = args.message || 'E_ACCESS_DENIED'
+        args.httpCode = args.httpCode || 403
+        super(args)
+      }
+    }
+
+    class NoResponse extends General {
+      constructor(args = {}) {
+        args.message = 'E_NO_RESPONSE_FROM_THE_SIDE_PARTY'
+        super(args)
+      }
+    }
+
+    // Specially for our other Adonis backends like Ovelo
+    class PassThrough extends General {
+      constructor(args = {}) {
+        args.message = args.message || 'E_PROVIDER_FAILED'
+        super(args)
+      }
+    }
+
+    class Validation extends General {
+      constructor(errorsArray) {
+        super({ httpCode: 422, message: 'E_VALIDATION_FAILED' })
+        this.validationErrors = {}
+
+        const arrayToParse = errorsArray.messages ? errorsArray.messages() : errorsArray
+
+        arrayToParse.forEach(error => {
+          if (!this.validationErrors[error.field]) this.validationErrors[error.field] = {}
+          this.validationErrors[error.field][error.validation] = {
+            message: error.message
+          }
+        })
+      }
+    }
+
+    this.General = General
+    this.Crash = Crash
+    this.BadRequest = BadRequest
+    this.NotFound = NotFound
+    this.Unauthorized = Unauthorized
+    this.Denied = Denied
+    this.NoResponse = NoResponse
+    this.PassThrough = PassThrough
+    this.Validation = Validation
   }
+
+  localize({ message, params, hint }) {
+    let localized = null
+    const defaultLocale = 'en'
+    const userLocale = this.$CLS.get('locale')
+    const officiallySupportedLocales = ['en', 'nl']
+
+    const codeInLowerCase = codeToLowerCase(message) + (hint ? '.hint' : '')
+
+    try {
+      localized = this.$Antl.forLocale(userLocale).formatMessage(`errors.${codeInLowerCase}`, params)
+    } catch (e) {
+      if (officiallySupportedLocales.includes(userLocale) && !hint) {
+        this.$Raven.captureException(new NE.LogicalException(`No localization for ${message} (${codeInLowerCase}) in '${userLocale}' language`, 500))
+      }
+
+      try {
+        localized = this.$Antl.forLocale(defaultLocale).formatMessage(`errors.${codeInLowerCase}`, params)
+      } catch (e2) {
+        if (!hint) this.$Raven.captureException(new NE.LogicalException(`No localization for ${message} (${codeInLowerCase}) in fallback language '${defaultLocale}'`, 500))
+      }
+    }
+
+
+    return localized
+  }
+
 }
 
-class PassThrough extends NE.LogicalException {
-  constructor(status, body) {
-    super((body && body.code) ? body.code : 'E_UNKNOWN_ERROR', status || 500)
-    this.details = (body && body.message) ? body.message : undefined // Because GoAbout sends details as "Message"
-    Object.assign(this, _.omit(body || {}, ['message']))
-  }
-}
 
-class Raven extends NE.LogicalException {
-  constructor(data) {
-    super(data.type || 'E_INTERNAL_ERROR', 500)
-    Object.assign(this, _.omit(data, ['type']))
-  }
-}
-
-class NoResponse extends NE.LogicalException {
-  constructor(errorCode, details) {
-    super(errorCode || 'NO_RESPONSE_FROM_SIDE_PARTY', 500)
-    this.details = details
-  }
-}
-
-module.exports = {
-  BadRequest,
-  Validation,
-  NotFound,
-  Unauthorized,
-  Denied,
-  PassThrough,
-  NoResponse,
-  Raven,
-  Crash
-}
+module.exports = Errors

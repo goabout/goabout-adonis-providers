@@ -30,7 +30,7 @@ class Request {
    * If request did not pass at all or gave back 400/500 errors, then it will throw a error passing statusCode and a body of erorrs. This error can be reused and sent right to the client
    */
 
-  async send({ url, method, token, body, query, headers, useCache, errorHandler }) {
+  async send({ url, method, token, body, query, headers, useCache, forceCacheUpdate, errorHandler, doNotReportFailing }) {
     let response = null
     if (!method) method = 'GET' // eslint-disable-line
 
@@ -55,18 +55,21 @@ class Request {
         json: true,
         headers: headersToSend,
         body: (method !== 'GET' && body) ? body : undefined,
-        qs: query || undefined
+        qs: query || undefined,
+        timeout: 30000
       })
     } catch (err) {
-      this.$Log.error(`Error while requesting ${url} with body ${JSON.stringify(body || {})} and query ${JSON.stringify(query || {})}`)
-      this.$Log.error(err)
-      this.$Raven.captureException(err)
-      throw new this.$Errors.NoResponse('E_PROVIDER_API_IS_DOWN')
+      if (!doNotReportFailing) {
+        this.$Log.error(`Error while requesting ${url} with body ${JSON.stringify(body || {})} and query ${JSON.stringify(query || {})}`)
+        this.$Log.error(err)
+        this.$Raven.captureException(err)
+      }
+      throw new this.$Errors.NoResponse()
     }
 
     this.throwErrorIfFailingRequest({ response, url, errorHandler })
 
-    if (useCache) {
+    if (useCache || forceCacheUpdate) {
       await this.saveToRedis({
         relation: url,
         token,
@@ -75,7 +78,7 @@ class Request {
     }
 
      // Filter all the extra stuff from the request obj
-    return _.pick(response, ['statusCode', 'body', 'halBody', 'headers'])
+    return _.pick(response, ['statusCode', 'body', 'halBody', 'headers', 'elapsedTime'])
   }
 
   // Original request library wrapped as promise
@@ -107,44 +110,46 @@ class Request {
       this.$Log.info(`Failed ${url} with answer ${JSON.stringify(response.body)}`)
 
       let error = null
-      const { errorCode, details } = errorHandler ? errorHandler(response) : this.defaultErrorHandler(response)
+      const { message, details, hint, validationErrors } = errorHandler ? errorHandler(response) : this.defaultErrorHandler(response)
 
       switch (response.statusCode) {
         case 400:
-          error = new this.$Errors.BadRequest(errorCode, details)
+          error = new this.$Errors.BadRequest({ message, details, hint })
           break
         case 401:
-          error = new this.$Errors.Unauthorized(details)
+          error = new this.$Errors.Unauthorized({ message, details, hint })
           break
         case 403:
-          error = new this.$Errors.Denied(errorCode, details)
+          error = new this.$Errors.Denied({ message, details, hint })
           break
         case 404:
-          error = new this.$Errors.NotFound(details)
+          error = new this.$Errors.NotFound({ message, details, hint })
           break
         default:
-          error = new this.$Errors.PassThrough(response.statusCode, Object.assign({ code: 'E_PROVIDER_FAILED', details }, response.body))
+          error = new this.$Errors.PassThrough({ httpCode: response.statusCode, message, details, hint, validationErrors })
       }
 
       error.providerUrl = url
       error.providerResponse = response.body
 
-      this.$Raven.captureException(error)
-      this.$Log.error(error)
       throw error
     }
   }
 
   defaultErrorHandler(response) {
-    let errorCode = null
+    let message = null
     let details = null
+    let hint = null
+    let validationErrors = null
 
     if (response && response.body) {
-      errorCode = response.body.code ? response.body.code : null
+      message = response.body.code ? response.body.code : null
       details = response.body.details ? response.body.details : null
+      hint = response.body.hint ? response.body.hint : null
+      validationErrors = response.body.validationErrors ? response.body.validationErrors : null
     }
 
-    return { errorCode, details }
+    return { message, details, hint, validationErrors }
   }
 
   async retrieveFromRedis({ relation, token }) {
@@ -192,7 +197,7 @@ class Request {
 
   constructRedisKey({ relation, token }) {
     if (!relation) {
-      this.$Raven.captureException(new this.$Errors.$Raven({ type: 'E_NO_RELATION_FOR_RAVEN' }))
+      this.$Raven.captureException(new this.$Errors.Crash({ message: 'E_NO_RELATION_FOR_RAVEN' }))
       return null
     }
 
