@@ -165,7 +165,7 @@ class Request {
     }
 
     try {
-      this.$Log.info(`${relation} has been found in cache`)
+      // this.$Log.debug(`${relation} has been found in cache`)
       result = JSON.parse(redisBareResult)
     } catch (e) {
       this.$Log.error('Failed to parse redis result', e, redisBareResult)
@@ -187,7 +187,7 @@ class Request {
       redisTransaction.expire(key, this.$Env.get('CACHE_TIME', 300)) // 5 minutes
 
       await redisTransaction.exec()
-      this.$Log.info(`Relation ${relation} saved to Redis`)
+      // this.$Log.info(`Relation ${relation} saved to Redis`)
     } catch (err) {
       this.$Log.error(`Failed to save ${relation} to redis`)
       this.$Log.error(err)
