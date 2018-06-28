@@ -28,7 +28,13 @@ class GoAboutProduct extends HALResource {
     if (this.internalProperties) sanitizedProduct.provider = this.internalProperties.provider
 
     if (this.getLink('self')) sanitizedProduct.addLink(this.isSubscription ? 'original-subscription' : 'original-product', this.getLink('self').href)
-    if (!this.isSubscription && this.getEmbed('http://rels.goabout.com/product-images')) sanitizedProduct.addEmbed('images', this.getEmbed('http://rels.goabout.com/product-images'))
+
+    if (!this.isSubscription && this.getEmbed('http://rels.goabout.com/product-images')) {
+      const productImages = this.getEmbed('http://rels.goabout.com/product-images')
+      productImages.addLinks('items', productImages.getLinks('item').map(r => r.href))
+      productImages.removeLinks('item')
+      sanitizedProduct.addEmbed('images', productImages)
+    }
 
     return sanitizedProduct
   }
