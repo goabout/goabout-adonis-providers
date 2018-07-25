@@ -222,18 +222,30 @@ describe('GoAbout', () => {
           '_embedded': {
             'item': [
               {
+                _links: {
+                  'self': {
+                    href: 'subscription-href'
+                  }
+                },
                 _embedded: {
                   'http://rels.goabout.com/product': {
                     name: fake.name,
-                    isSubscription: false
+                    isSubscription: false,
+                    _links: {}
                   }
                 }
               },
               {
+                _links: {
+                  'self': {
+                    href: 'subscription-href'
+                  }
+                },
                 _embedded: {
                   'http://rels.goabout.com/product': {
                     name: this.realSubcriptionName,
-                    isSubscription: true
+                    isSubscription: true,
+                    _links: {}
                   }
                 }
               },
@@ -264,6 +276,7 @@ describe('GoAbout', () => {
 
       assert.equal(this.result.length, 1)
       assert.equal(this.result[0].name, this.realSubcriptionName)
+      assert.equal(this.result[0]._links.subscription.href, 'subscription-href')
 
       assert(this.result[0] instanceof GoAboutSubscription)
 

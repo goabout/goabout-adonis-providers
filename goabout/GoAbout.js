@@ -76,7 +76,7 @@ class GoAbout {
     requestUrl = requestUrl.replace(/{\?.*}/g, '')
     const requestToken = useSupertoken ? this.supertoken : (token || this.token)
 
-    response = await this.$Request.send({
+    const config = {
       url: requestUrl,
       method,
       body,
@@ -85,7 +85,9 @@ class GoAbout {
       useCache,
       forceCacheUpdate,
       errorHandler: this.errorHandler
-    })
+    }
+
+    response = await this.$Request.send(config)
 
     return response
   }
@@ -160,7 +162,10 @@ class GoAbout {
 
       subscriptionResources.forEach(resource => {
         const subscription = resource.getEmbed('http://rels.goabout.com/product')
-        if (subscription && subscription.isSubscription) subscriptions.push(new GoAboutSubscription(subscription, resource.properties, this)) //eslint-disable-line
+        if (subscription && subscription.isSubscription) {
+          subscription.addLink('subscription', resource.getLink('self'))
+          subscriptions.push(new GoAboutSubscription(subscription, resource.properties, this))
+        }
       })
 
       this.$subscriptions = subscriptions

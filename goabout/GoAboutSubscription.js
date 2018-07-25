@@ -1,4 +1,5 @@
 const GoAboutProduct = require('./GoAboutProduct')
+const moment = require('moment')
 
 class GoAboutSubscription extends GoAboutProduct {
   constructor(subscription, properties, GoAboutInstance) {
@@ -40,6 +41,20 @@ class GoAboutSubscription extends GoAboutProduct {
     })
 
     return productToReturn
+  }
+
+  async end() {
+    const response = await this.$GoAbout.request({
+      resource: this,
+      relation: 'subscription',
+      method: 'PUT',
+      body: {
+        properties: this.properties,
+        validUntil: moment().subtract(5, 'minutes').toISOString()
+      }
+    })
+
+    return response
   }
 
   toSanitizedHal() {
