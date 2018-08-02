@@ -94,6 +94,13 @@ class GoAboutBooking extends HALResource {
   }
 
   async getProduct() {
+    const link = this.getLink('http://rels.goabout.com/product')
+    if (!link) {
+      const error = new this.$Errors.Crash({ message: 'E_NO_PRODUCT_FOUND', details: `No product for booking ${this.getLink('self').href}` })
+      this.$Raven.captureException(error)
+      throw error
+    }
+
     if (!this.product) {
       this.product = await this.$GoAbout.getProductOrSubscription({ url: this.getLink('http://rels.goabout.com/product').href })
     }
