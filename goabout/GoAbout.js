@@ -308,6 +308,14 @@ class GoAbout {
     if (validation.fails()) throw new this.$Errors.Validation(validation.messages())
   }
 
+  async sendFeedback({ email, text, subject, name }) {
+    return this.request({
+      relation: 'http://rels.goabout.com/feedback',
+      method: 'POST',
+      body: { email, text, subject, name }
+    })
+  }
+
   // Or product-subscription href
   async generateProductHref(productId) {
     if (!productId || (_.isString(productId) && !productId.length)) throw new this.$Errors.BadRequest('E_NO_SUBSCRIPTION_OR_PRODUCT_ID')
