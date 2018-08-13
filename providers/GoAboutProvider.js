@@ -4,14 +4,15 @@ const GoAbout = require('../goabout/GoAbout')
 class GoAboutProvider extends ServiceProvider {
 
   register() {
-    this.app.bind('GoAbout/providers/GoAbout', () => new GoAbout(
-        use('GoAbout/providers/Request'),
-        use('Env'),
-        use('Errors'),
-        use('Log'),
-        use('Raven'),
-        use('Validator')
-      ))
+    this.app.bind('GoAbout/providers/GoAbout', () => new GoAbout({
+      Request: use('GoAbout/providers/Request'),
+      Env: use('Env'),
+      Errors: use('Errors'),
+      Log: use('Log'),
+      Raven: use('Raven'),
+      Validator: use('Validator'),
+      Auth0: use('Auth0')
+    }))
   }
 
   static bare() { return GoAbout }

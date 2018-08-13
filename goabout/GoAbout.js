@@ -9,19 +9,15 @@ const eventTypes = require('./eventTypes')
 
 class GoAbout {
 
-  constructor($Request, $Env, $Errors, $Log, $Raven, $Validator) {
+  constructor(providers) {
     // Injected values
-    this.$Request = $Request
-    this.$Env = $Env
-    this.$Errors = $Errors
-    this.$Log = $Log
-    this.$Raven = $Raven
-    this.$Validator = $Validator
+    Object.keys(providers).forEach(key => { this[`$${key}`] = providers[key] })
 
     // GoAbout subclasses
     this.Booking = GoAboutBooking
     this.Subscription = GoAboutSubscription
     this.Product = GoAboutProduct
+
 
     // Variables
     this.token = null

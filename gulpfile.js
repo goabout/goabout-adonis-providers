@@ -25,6 +25,7 @@ const config = {
     'test/request/*',
     'test/goabout/*',
     'test/utils/*',
+    'test/auth0/*',
   ]
 }
 

@@ -45,7 +45,13 @@ describe('GoAbout', () => {
 
     this.Request = { send: sandbox.stub() }
 
-    this.GoAbout = new GoAbout(this.Request, this.Env, config.Errors, config.Log, config.Raven)
+    this.GoAbout = new GoAbout({
+      Request: this.Request,
+      Env: this.Env,
+      Errors: config.Errors,
+      Log: config.Log,
+      Raven: config.Raven
+    })
     this.GoAbout.token = this.token
   })
 
