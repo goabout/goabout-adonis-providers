@@ -16,10 +16,10 @@ class Auth0 {
 
   async getToken() {
     // If not, request a new one
-    this.$Log.debug('Getting fresh auth0 token')
     let token = await this.getTokenFromRedis()
     if (token) return token
 
+    this.$Log.debug('Getting fresh auth0 token')
     const response = await this.$Request.send({
       url: `${this.issuer}oauth/token`,
       method: 'POST',

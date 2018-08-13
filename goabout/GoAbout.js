@@ -18,7 +18,6 @@ class GoAbout {
     this.Subscription = GoAboutSubscription
     this.Product = GoAboutProduct
 
-
     // Variables
     this.token = null
     this.supertoken = this.$Env.get('GOABOUT_SUPERTOKEN', undefined)

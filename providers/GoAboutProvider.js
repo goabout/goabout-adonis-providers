@@ -10,8 +10,7 @@ class GoAboutProvider extends ServiceProvider {
       Errors: use('Errors'),
       Log: use('Log'),
       Raven: use('Raven'),
-      Validator: use('Validator'),
-      Auth0: use('Auth0')
+      Validator: use('Validator')
     }))
   }
 
