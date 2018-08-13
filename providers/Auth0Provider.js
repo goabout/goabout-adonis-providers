@@ -7,8 +7,8 @@ class Auth0Provider extends ServiceProvider {
     const Env = use('Env')
     const isRedisActivated = !!Env.get('REDIS_PORT')
 
-    this.app.bind('Auth0/providers/Auth0', () => new Auth0({
-      Request: use('goabout/providers/Request'),
+    this.app.bind('GoAbout/providers/Auth0', () => new Auth0({
+      Request: use('GoAbout/providers/Request'),
       Env,
       Errors: use('Errors'),
       Log: use('Log'),
