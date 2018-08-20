@@ -17,6 +17,13 @@ describe('GoAbout', () => {
           email: this.email,
           identifier: 'goabout-identifier',
           validated: true,
+          name: 'Vasya',
+          phonenumber: '342342',
+          properties: {
+            breastSize: 3,
+            politicalViews: 'Kommunist',
+            vegeterian: true
+          },
           _links: {
             self: {
               href: 'https://api.goabout.com/user/2432'
@@ -221,7 +228,7 @@ describe('GoAbout', () => {
 
   describe('getUserSubscriptions', () => {
     beforeEach(() => {
-      this.realSubcriptionName = fake.name
+      this.realSubscriptionName = fake.name
 
       this.userSubscriptions = {
         halBody: new HALResource({
@@ -249,7 +256,7 @@ describe('GoAbout', () => {
                 },
                 _embedded: {
                   'http://rels.goabout.com/product': {
-                    name: this.realSubcriptionName,
+                    name: this.realSubscriptionName,
                     isSubscription: true,
                     _links: {}
                   }
@@ -281,7 +288,7 @@ describe('GoAbout', () => {
 
 
       assert.equal(this.result.length, 1)
-      assert.equal(this.result[0].name, this.realSubcriptionName)
+      assert.equal(this.result[0].name, this.realSubscriptionName)
       assert.equal(this.result[0]._links.subscription.href, 'subscription-href')
 
       assert(this.result[0] instanceof GoAboutSubscription)
@@ -300,6 +307,124 @@ describe('GoAbout', () => {
       }
 
       assert.equal(this.error.status, 400)
+    })
+  })
+
+  describe('getUserProperties', () => {
+    beforeEach(() => {
+      sandbox.stub(this.GoAbout, 'getRoot').resolves(this.goAboutRootApi)
+    })
+
+    it('should get user properties', async () => {
+      const result = await this.GoAbout.getUserProperties()
+      assert.equal(result.name, 'Vasya')
+      assert.equal(result.phonenumber, '342342')
+      assert.equal(result.breastSize, 3)
+    })
+  })
+
+  describe('setUserProperties', () => {
+    beforeEach(() => {
+      sandbox.stub(this.GoAbout, 'getRoot').resolves(this.goAboutRootApi)
+      sandbox.stub(this.GoAbout, 'request').resolves(true)
+
+      this.newUserProps = {
+        breastSize: 3,
+        vegeterian: false,
+        firstName: 'Eric',
+        lastName: 'Cartman',
+        phonenumber: '123456'
+      }
+    })
+
+    it('should update props', async () => {
+      await this.GoAbout.setUserProperties({ properties: this.newUserProps })
+
+      const requestCall = this.GoAbout.request.getCall(0).args[0]
+      const requestBody = this.GoAbout.request.getCall(0).args[0].body
+
+      assert.equal(requestCall.method, 'PUT')
+      assert.equal(requestCall.relation, 'self')
+      assert.equal(requestBody.properties.breastSize, 3)
+    })
+
+    it('should keep untouched props', async () => {
+      await this.GoAbout.setUserProperties({ properties: this.newUserProps })
+      const requestBody = this.GoAbout.request.getCall(0).args[0].body
+
+      assert.equal(requestBody.properties.politicalViews, 'Kommunist')
+    })
+
+    it('should remove props', async () => {
+      this.newUserProps.politicalViews = null
+
+      await this.GoAbout.setUserProperties({ properties: this.newUserProps })
+      const requestBody = this.GoAbout.request.getCall(0).args[0].body
+
+      assert.equal(requestBody.properties.politicalViews, null)
+    })
+
+    it('should set name out of first and last names', async () => {
+      this.newUserProps.politicalViews = null
+
+      await this.GoAbout.setUserProperties({ properties: this.newUserProps })
+      const requestBody = this.GoAbout.request.getCall(0).args[0].body
+
+      assert.equal(requestBody.name, 'Eric Cartman')
+    })
+
+    it('should update phonenumber and remove it from general props', async () => {
+      await this.GoAbout.setUserProperties({ properties: this.newUserProps })
+      const requestBody = this.GoAbout.request.getCall(0).args[0].body
+
+      assert.equal(requestBody.phonenumber, '123456')
+      assert.equal(requestBody.properties.phonenumber, undefined)
+    })
+
+    it('should update name and remove it from general props', async () => {
+      await this.GoAbout.setUserProperties({ properties: this.newUserProps })
+      const requestBody = this.GoAbout.request.getCall(0).args[0].body
+
+      assert.equal(requestBody.name, 'Eric Cartman')
+      assert.equal(requestBody.properties.name, undefined)
+    })
+
+    it('should not use name prop if first&last name are set', async () => {
+      this.newUserProps.name = 'blabla'
+
+      await this.GoAbout.setUserProperties({ properties: this.newUserProps })
+      const requestBody = this.GoAbout.request.getCall(0).args[0].body
+
+      assert.equal(requestBody.name, 'Eric Cartman')
+      assert.equal(requestBody.properties.name, undefined)
+    })
+
+    it('should  use name prop if first&last name are not set', async () => {
+      this.newUserProps.name = 'blabla'
+      delete this.newUserProps.firstName
+
+      await this.GoAbout.setUserProperties({ properties: this.newUserProps })
+      const requestBody = this.GoAbout.request.getCall(0).args[0].body
+
+      assert.equal(requestBody.name, 'blabla')
+      assert.equal(requestBody.properties.name, undefined)
+    })
+
+    it('should not update email and remove it from general props', async () => {
+      this.newUserProps.email = 'blabla@xtc.vc'
+
+      await this.GoAbout.setUserProperties({ properties: this.newUserProps })
+      const requestBody = this.GoAbout.request.getCall(0).args[0].body
+
+      assert.equal(requestBody.email, undefined)
+      assert.equal(requestBody.properties.email, undefined)
+    })
+
+    it('should get fresh root & user', async () => {
+      this.GoAbout.user = {}
+      await this.GoAbout.setUserProperties({ properties: this.newUserProps })
+      assert.equal(this.GoAbout.user, null)
+      assert.deepEqual(this.GoAbout.getRoot.getCall(1).args[0], { forceCacheUpdate: true })
     })
   })
 
@@ -368,7 +493,7 @@ describe('GoAbout', () => {
     })
 
     // For unfinished bookings
-    // this.unfinushedBookings = {
+    // this.unfinishedBookings = {
     //   halBody: halson({
     //     '_embedded': {
     //       'item': [

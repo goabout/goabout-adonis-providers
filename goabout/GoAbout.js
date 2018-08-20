@@ -51,7 +51,7 @@ class GoAbout {
 
   * @returns {Response} Gives back a response object containing statusCode, headers, body and halBody when present
   *
-  * If request did not pass at all or gave back 400/500 errors, then it will throw a error passing statusCode and a body of erorrs. This error can be reused and sent right to the client
+  * If request did not pass at all or gave back 400/500 errors, then it will throw a error passing statusCode and a body of errors. This error can be reused and sent right to the client
   */
   async request({ resource, relation, method, body, query, token, useSupertoken, useCache, forceCacheUpdate }) {
     let response = null
@@ -102,12 +102,13 @@ class GoAbout {
     More specific methods, based on request and Request.send
   */
 
-  async getRoot() {
-    if (!this.$root) {
+  async getRoot({ forceCacheUpdate = false } = {}) {
+    if (!this.$root || forceCacheUpdate) {
       const response = await this.$Request.send({
         url: this.$Env.get('GOABOUT_API'),
         token: this.token,
-        useCache: true
+        useCache: true,
+        forceCacheUpdate
       })
       this.$root = response.halBody
     }
@@ -138,6 +139,55 @@ class GoAbout {
 
 
     return this.user
+  }
+
+  async getUserProperties() {
+    await this.getRoot({ forceCacheUpdate: true })
+    const user = await this.getUser()
+    const userProperties = Object.assign({}, user.properties)
+
+    // So all user props would be in the same place
+    if (user.email) userProperties.email = user.email
+    if (user.name) userProperties.name = user.name
+    if (user.phonenumber) userProperties.phonenumber = user.phonenumber
+
+    return userProperties
+  }
+
+  async setUserProperties({ properties } = {}) {
+    const user = await this.getUser()
+    const currentProperties = await this.getUserProperties()
+
+    const propsToSave = Object.assign({}, currentProperties, properties)
+    const requestBody = { properties: propsToSave }
+
+    delete propsToSave.email
+
+    // Because email, phonenumber & name are saved in separate fields
+    if (properties.phonenumber !== undefined) {
+      requestBody.phonenumber = propsToSave.phonenumber
+      delete propsToSave.phonenumber
+    }
+
+    if (propsToSave.firstName && propsToSave.lastName) {
+      requestBody.name = `${propsToSave.firstName} ${propsToSave.lastName}`
+      delete propsToSave.name
+    } else if (properties.name !== undefined) {
+      requestBody.name = propsToSave.name
+      delete propsToSave.name
+    }
+
+    const response = await this.request({
+      resource: user,
+      relation: 'self',
+      method: 'PUT',
+      body: requestBody
+    })
+
+    // Reset user cache
+    delete this.user
+    await this.getRoot({ forceCacheUpdate: true })
+    return response
   }
 
   async getUserSubscriptions() {
@@ -292,6 +342,7 @@ class GoAbout {
     }
   }
 
+  // Deprecated method, used only when goabout booking is made to send userProperties
   async fillWithUserPropsAndValidate({ userProperties }) {
     if (!this.user) await this.getUser()
 

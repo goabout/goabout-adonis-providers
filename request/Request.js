@@ -34,7 +34,7 @@ class Request {
     let response = null
     if (!method) method = 'GET' // eslint-disable-line
 
-    if (useCache && method === 'GET') {
+    if (!forceCacheUpdate && useCache && method === 'GET') {
       const dbResult = await this.retrieveFromRedis({ relation: url, token })
       if (dbResult) {
         response = { body: dbResult, halBody: new HALResource(dbResult), headers: {}, statusCode: 200 }
