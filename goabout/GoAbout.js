@@ -142,14 +142,23 @@ class GoAbout {
   }
 
   async getUserProperties() {
-    await this.getRoot({ forceCacheUpdate: true })
+    if (this.$userProperties) return this.$userProperties
+
     const user = await this.getUser()
-    const userProperties = Object.assign({}, user.properties)
+    const userWithSupertokenRes = await await this.request({
+      resource: user,
+      relation: 'self',
+      useSupertoken: true,
+      useCache: false
+    })
+
+    const userWithSupertoken = userWithSupertokenRes.halBody
+    const userProperties = Object.assign({}, userWithSupertoken.properties)
 
     // So all user props would be in the same place
-    if (user.email) userProperties.email = user.email
-    if (user.name) userProperties.name = user.name
-    if (user.phonenumber) userProperties.phonenumber = user.phonenumber
+    if (userWithSupertoken.email) userProperties.email = userWithSupertoken.email
+    if (userWithSupertoken.name) userProperties.name = userWithSupertoken.name
+    if (userWithSupertoken.phonenumber) userProperties.phonenumber = userWithSupertoken.phonenumber
 
     return userProperties
   }
@@ -177,17 +186,18 @@ class GoAbout {
       delete propsToSave.name
     }
 
-    const response = await this.request({
+    await this.request({
       resource: user,
       relation: 'self',
       method: 'PUT',
-      body: requestBody
+      body: requestBody,
+      useSupertoken: true
     })
 
-    // Reset user cache
-    delete this.user
-    await this.getRoot({ forceCacheUpdate: true })
-    return response
+    // Reset cached user props
+    this.$userProperties = undefined
+
+    return true
   }
 
   async getUserSubscriptions() {

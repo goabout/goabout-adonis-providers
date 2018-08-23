@@ -27,7 +27,7 @@ class Request {
 
    * @returns {Response} Gives back a response object containing statusCode, headers, body and halBody when present
    *
-   * If request did not pass at all or gave back 400/500 errors, then it will throw a error passing statusCode and a body of erorrs. This error can be reused and sent right to the client
+   * If request did not pass at all or gave back 400/500 errors, then it will throw a error passing statusCode and a body of errors. This error can be reused and sent right to the client
    */
 
   async send({ url, method, token, body, query, headers, useCache, forceCacheUpdate, errorHandler, doNotReportFailing }) {
