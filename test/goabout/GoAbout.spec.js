@@ -313,6 +313,14 @@ describe('GoAbout', () => {
   describe('getUserProperties', () => {
     beforeEach(() => {
       sandbox.stub(this.GoAbout, 'getRoot').resolves(this.goAboutRootApi)
+      sandbox.stub(this.GoAbout, 'request').resolves({ halBody: new HALResource({
+        name: 'Vasya',
+        phonenumber: '342342',
+        properties: {
+          breastSize: 3
+        }
+      })
+      })
     })
 
     it('should get user properties', async () => {
@@ -320,12 +328,26 @@ describe('GoAbout', () => {
       assert.equal(result.name, 'Vasya')
       assert.equal(result.phonenumber, '342342')
       assert.equal(result.breastSize, 3)
+
+      const reqArgs = this.GoAbout.request.getCall(0).args[0]
+
+      assert.equal(reqArgs.relation, 'self')
+      assert.equal(reqArgs.resource, this.goAboutRootApi.getEmbed('http://rels.goabout.com/authenticated-user'))
+      assert.equal(reqArgs.useCache, false)
+      assert.equal(reqArgs.useSupertoken, true)
     })
   })
 
   describe('setUserProperties', () => {
     beforeEach(() => {
       sandbox.stub(this.GoAbout, 'getRoot').resolves(this.goAboutRootApi)
+      sandbox.stub(this.GoAbout, 'getUserProperties').resolves({
+        name: 'Vasya',
+        phonenumber: '342342',
+        breastSize: 3,
+        politicalViews: 'Kommunist',
+        vegeterian: true
+      })
       sandbox.stub(this.GoAbout, 'request').resolves(true)
 
       this.newUserProps = {
@@ -418,13 +440,6 @@ describe('GoAbout', () => {
 
       assert.equal(requestBody.email, undefined)
       assert.equal(requestBody.properties.email, undefined)
-    })
-
-    it('should get fresh root & user', async () => {
-      this.GoAbout.user = {}
-      await this.GoAbout.setUserProperties({ properties: this.newUserProps })
-      assert.equal(this.GoAbout.user, null)
-      assert.deepEqual(this.GoAbout.getRoot.getCall(1).args[0], { forceCacheUpdate: true })
     })
   })
 

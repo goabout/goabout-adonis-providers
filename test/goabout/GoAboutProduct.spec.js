@@ -5,8 +5,8 @@ describe('GoAboutProduct', () => {
   beforeEach(async () => {
     this.fakeProduct = {
       name: fake.name,
-      logoHref: fake.href,
-      moreInfoHref: fake.href,
+      logoHref: fake.url,
+      moreInfoHref: fake.url,
       description: fake.sentence,
       extendedDescription: fake.sentence,
       categories: fake.array,
@@ -14,7 +14,7 @@ describe('GoAboutProduct', () => {
       extraProperty: fake.sentence,
       _links: {
         self: {
-          href: fake.href
+          href: fake.url
         }
       }
     }

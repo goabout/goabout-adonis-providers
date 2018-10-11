@@ -16,6 +16,17 @@ const example = {
     }, {
       href: 'https://twitter.com/hajovsky',
       name: 'twitter'
+    }],
+    'with-template': {
+      href: '/template/{id}{?firstName,lastName}',
+      templated: true
+    },
+    'with-template-multiple': [{
+      href: '/template/{id}{?firstName,lastName}',
+      templated: true
+    }, {
+      href: '/template-1/{id}{?firstName,lastName}',
+      templated: true
     }]
   },
   title: 'Juraj Hájovský',
@@ -144,7 +155,7 @@ describe('HALResource', () => {
 
     it('return existing rels', () => {
       const res = new HALResource(clone(example)).listLinkRels()
-      const expected = ['self', 'avatar', 'related']
+      const expected = ['self', 'avatar', 'related', 'with-template', 'with-template-multiple']
       assert.deepEqual(res, expected)
     })
   })
@@ -176,36 +187,40 @@ describe('HALResource', () => {
 
     it('return links by rel', () => {
       let res = new HALResource(clone(example)).getLinks('avatar')
-      assert.deepEqual(res, [example._links.avatar])
+      assert.deepEqual(res, [example._links.avatar.href])
 
       res = new HALResource(clone(example)).getLinks('related')
+      assert.deepEqual(res, example._links.related.map(l => l.href))
+    })
+
+    it('return full link objects res by rel', () => {
+      let res = new HALResource(clone(example)).getLinks('avatar', { asObject: true })
+      assert.deepEqual(res, [example._links.avatar])
+
+      res = new HALResource(clone(example)).getLinks('related', { asObject: true })
       assert.deepEqual(res, example._links.related)
     })
 
-    it('use filterCallback', () => {
-      const expected = [{
-        href: 'https://twitter.com/hajovsky',
-        name: 'twitter'
-      }]
+    it('should enrich links', () => {
+      let res = new HALResource(clone(example)).getLinks('with-template', { props: { id: 1, firstName: 'vasya', lastName: 'pupkin' } })
+      assert.deepEqual(res, ['/template/1?firstName=vasya&lastName=pupkin'])
 
-      const res = new HALResource(clone(example))
-      let links = res.getLinks('related', item => item.name === 'twitter')
-      assert.deepEqual(links, expected)
-
-      links = res.getLinks('related', item => Boolean(item.href))
-      assert.deepEqual(links, example._links.related)
+      res = new HALResource(clone(example)).getLinks('with-template-multiple', { asObject: true, props: { id: 1, firstName: 'vasya', lastName: 'pupkin' } })
+      assert.deepEqual(res, [{
+        href: '/template/1?firstName=vasya&lastName=pupkin',
+        templated: true
+      }, {
+        'href': '/template-1/1?firstName=vasya&lastName=pupkin',
+        'templated': true
+      }])
     })
 
-    it('use begin/end', () => {
-      const res = new HALResource(clone(example))
-      let links = res.getLinks('related', null, 0)
-      assert.deepEqual(links, example._links.related)
+    it('should remove unenriched links props', () => {
+      let res = new HALResource(clone(example)).getLinks('with-template', { props: { id: 1 } })
+      assert.deepEqual(res, ['/template/1'])
 
-      links = res.getLinks('related', null, 1)
-      assert.deepEqual(links, example._links.related.slice(1))
-
-      links = res.getLinks('related', null, 0, 1)
-      assert.deepEqual(links, example._links.related.slice(0, 1))
+      res = new HALResource(clone(example)).getLinks('with-template')
+      assert.deepEqual(res, ['/template/'])
     })
   })
 
@@ -218,33 +233,38 @@ describe('HALResource', () => {
       assert.equal(res, undefined)
     })
 
-    it('return default value', () => {
-      const def = { title: 'Untitled' }
-      const res = new HALResource().getLink('selfX', def)
-      assert.deepEqual(res, def)
-    })
-
     it('return link by rel', () => {
       const res = new HALResource(clone(example))
 
-      assert.deepEqual(res.getLink('avatar'), example._links.avatar)
-      assert.deepEqual(res.getLink('related'), example._links.related[0])
+      assert.deepEqual(res.getLink('avatar'), example._links.avatar.href)
+      assert.deepEqual(res.getLink('related'), example._links.related[0].href)
     })
 
-    it('use filterCallback', () => {
+    it('return full link objects res by rel', () => {
       const res = new HALResource(clone(example))
 
-      assert.deepEqual(res.getLink('avatar', () => true), example._links.avatar)
+      assert.deepEqual(res.getLink('avatar', { asObject: true }), example._links.avatar)
 
-      assert.deepEqual(res.getLink('related', item => item.name === 'twitter'), example._links.related[1])
-
-      assert.deepEqual(res.getLink('related', () => true), example._links.related[0])
+      assert.deepEqual(res.getLink('related', { asObject: true }), example._links.related[0])
     })
 
-    it('use filterCallback w/ default value', () => {
-      const res = new HALResource(clone(example))
-      const def = { title: 'Untitled' }
-      assert.deepEqual(res.getLink('related', item => item.name === 'not exists', def), def)
+    it('should enrich links', () => {
+      let res = new HALResource(clone(example)).getLink('with-template', { props: { id: 1, firstName: 'vasya', lastName: 'pupkin' } })
+      assert.deepEqual(res, '/template/1?firstName=vasya&lastName=pupkin')
+
+      res = new HALResource(clone(example)).getLink('with-template-multiple', { asObject: true, props: { id: 1, firstName: 'vasya', lastName: 'pupkin' } })
+      assert.deepEqual(res, {
+        href: '/template/1?firstName=vasya&lastName=pupkin',
+        templated: true
+      })
+    })
+
+    it('should remove unenriched links props', () => {
+      let res = new HALResource(clone(example)).getLink('with-template', { props: { id: 1 } })
+      assert.deepEqual(res, '/template/1')
+
+      res = new HALResource(clone(example)).getLink('with-template')
+      assert.deepEqual(res, '/template/')
     })
   })
 
@@ -339,7 +359,7 @@ describe('HALResource', () => {
       const link = { href: '/hajovsky' }
 
       res.addLink('self', link)
-      assert.deepEqual(res.getLink('self'), link)
+      assert.deepEqual(res.getLink('self', { asObject: true }), link)
     })
 
     it('add first link (string)', () => {
@@ -347,7 +367,7 @@ describe('HALResource', () => {
       const link = { href: '/hajovsky' }
 
       res.addLink('self', link.href)
-      assert.deepEqual(res.getLink('self'), link)
+      assert.deepEqual(res.getLink('self', { asObject: true }), link)
     })
 
     it('add second link', () => {
@@ -355,7 +375,7 @@ describe('HALResource', () => {
                 .addLink('related', example._links.related[0])
                 .addLink('related', example._links.related[1])
 
-      assert.deepEqual(res.getLinks('related'), example._links.related)
+      assert.deepEqual(res.getLinks('related', { asObject: true }), example._links.related)
     })
   })
 

@@ -3,6 +3,8 @@
   However, the code was refactored into ES6 class so it can be used as a base for other Classes without any harm
  */
 
+const UriTemplate = require('uri-templates')
+
 
 class HALResource {
   constructor(data) {
@@ -48,24 +50,31 @@ class HALResource {
     return this._embedded ? Object.keys(this._embedded) : []
   }
 
-  getLinks(rel, begin, end) {
+  getLinks(rel, { asObject, props } = {}) {
     if (!this._links || !(rel in this._links)) {
       return []
     }
 
-    const links = [].concat(this._links[rel])
+    const links = []
+      .concat(this._links[rel])
+      .map(link => {
+        if (!link) return undefined
+
+        let href = link.href
+
+        if (link.templated) {
+          const template = new UriTemplate(href)
+          href = template.fill(props || {})
+        }
+
+        return asObject ? Object.assign({}, link, { href }) : href
+      })
 
     return links
-      .slice(begin || 0, end || links.length)
-      .map(link => link.href || link)
   }
 
-  getLink(rel, filterCallback, def) {
-    if (typeof filterCallback !== 'function') {
-      def = filterCallback
-      filterCallback = null
-    }
-    return this.getLinks(rel, filterCallback, 0, 1)[0] || def
+  getLink(rel, props) {
+    return this.getLinks(rel, props)[0]
   }
 
   getEmbeds(rel, filterCallback, begin, end) {
@@ -121,6 +130,8 @@ class HALResource {
     links.forEach(link => {
       this._links[rel].push({ href: link })
     })
+
+    return this
   }
 
   addEmbed(rel, embed) {

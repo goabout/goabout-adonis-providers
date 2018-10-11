@@ -1,7 +1,7 @@
 /*
   Extends HALResource with CLS and Routes but then requires Adonis modules
  */
-const urlTemplate = require('url-template')
+const urlTemplate = require('url-templates')
 const HALResource = require('./HALResource')
 
 // Since JS doesn't really have private properties, we can reference private values via symbols.
@@ -33,7 +33,6 @@ class HALResourceWithRoutes extends HALResource {
   addTemplatedLink(rel, template, { props, customPath, ignoreMissingProps } = {}) {
     const link = this.$generate({ template, customPath, props, ignoreMissingProps })
     this.addLink(rel, link)
-
     return this
   }
 
@@ -48,7 +47,7 @@ class HALResourceWithRoutes extends HALResource {
 
     path = this.$matchAgainst({ path, propertiesToMatch: propsToFulfill })
 
-    // if (!ignoreMissingProps) this.$crashIfMissingProps({ path, template })
+    if (!ignoreMissingProps) this.$crashIfMissingProps({ path, template })
 
     return this[$].host + path
   }

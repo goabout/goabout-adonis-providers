@@ -61,7 +61,7 @@ class GoAbout {
     if (!resourceToCall.getLink) resourceToCall = new HALResource(resourceToCall)
 
     let requestUrl = resourceToCall.getLink(relation)
-    requestUrl = requestUrl ? requestUrl.href : undefined
+    requestUrl = requestUrl || undefined
     if (!requestUrl || !requestUrl.length) {
       this.$Raven.captureException(new this.$Errors.Crash({ message: 'E_MISSING_RELATION', details: relation }))
       throw new this.$Errors.BadRequest()
