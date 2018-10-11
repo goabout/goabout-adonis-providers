@@ -237,7 +237,7 @@ class GoAbout {
       const userSubscriptions = await this.getUserSubscriptions()
 
       userSubscriptions.some(subscription => {
-        if (subscription.getLink('self').href === subscriptionHref) this.activeSubscription = subscription
+        if (subscription.getLink('self') === subscriptionHref) this.activeSubscription = subscription
         return this.activeSubscription
       })
     }
@@ -267,7 +267,7 @@ class GoAbout {
         relation: onlyCheck ? 'http://rels.goabout.com/order-info' : 'http://rels.goabout.com/order-checkout',
         body: {
           products: [{
-            productHref: product.getLink('self').href,
+            productHref: product.getLink('self'),
             properties: productProperties
           }],
           userProperties
@@ -290,7 +290,7 @@ class GoAbout {
       await Promise.all([
         booking.setEvent({
           eventType: 'SUBSCRIPTION_HREF',
-          eventData: subscription.getLink('self').href
+          eventData: subscription.getLink('self')
         }),
         booking.setEvent({
           eventType: 'FINISHED',
@@ -377,7 +377,7 @@ class GoAbout {
     if (!productId || (_.isString(productId) && !productId.length)) throw new this.$Errors.BadRequest('E_NO_SUBSCRIPTION_OR_PRODUCT_ID')
 
     const root = await this.getRoot()
-    return `${root.getLink('self').href}product/${productId}`
+    return `${root.getLink('self')}product/${productId}`
   }
 
   // TODO TEST
@@ -385,12 +385,12 @@ class GoAbout {
     if (!productBookingId || (_.isString(productBookingId) && !productBookingId.length)) throw new this.$Errors.BadRequest('E_NO_PRODUCT_BOOKING_ID')
 
     const root = await this.getRoot()
-    return `${root.getLink('self').href}product-booking/${productBookingId}`
+    return `${root.getLink('self')}product-booking/${productBookingId}`
   }
 
   // TODO Make test
   getResourceId({ resource }) {
-    const link = resource.getLink('self').href
+    const link = resource.getLink('self')
     const linkInParts = link.split('/')
     const id = linkInParts[linkInParts.length - 1]
     return id

@@ -77,13 +77,13 @@ describe('GoAboutSubscription', () => {
     })
 
     it('should initialize object and still keep hal methods', async () => {
-      assert.equal(this.subscription.getLink('self').href, this.fakeSubscription._links.self.href)
+      assert.equal(this.subscription.getLink('self'), this.fakeSubscription._links.self.href)
     })
 
     it('should initialize object fine if properties already have HAL methods', async () => {
       this.subscription = new GoAboutProduct(new HALResource(this.fakeSubscription), this.fakeGoAbout)
 
-      assert.equal(this.subscription.getLink('self').href, this.fakeSubscription._links.self.href)
+      assert.equal(this.subscription.getLink('self'), this.fakeSubscription._links.self.href)
     })
 
     it('should initialize object and set GoAbout properties in order to use GoAbout methods', async () => {
@@ -132,7 +132,7 @@ describe('GoAboutSubscription', () => {
     beforeEach(() => {
       this.halifiedProducts = new HALResource(this.fakeProducts)
       this.subscription.applicableProducts = this.halifiedProducts.getEmbeds('http://rels.goabout.com/product')
-      this.href = this.subscription.applicableProducts[1].getLink('self').href
+      this.href = this.subscription.applicableProducts[1].getLink('self')
 
       this.subscription.getApplicableProducts = sandbox.stub().resolves()
       this.fakeGoAbout.generateProductHref = sandbox.stub().resolves(this.href)

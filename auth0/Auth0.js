@@ -11,7 +11,7 @@ class Auth0 {
     this.audience = this.$Env.get('OAUTH_AUDIENCE')
     this.issuer = this.$Env.get('OAUTH_ISSUER')
 
-    if (!this.clientId || !this.clientSecret || !this.audience || !this.issuer) throw this.$Error.Crash({ message: 'E_MISSING_AUTH0_CONFIG' })
+    if (!this.clientId || !this.clientSecret || !this.audience || !this.issuer) throw new this.$Errors.Crash({ message: 'E_MISSING_AUTH0_CONFIG' })
   }
 
   async getToken() {

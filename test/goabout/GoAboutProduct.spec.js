@@ -37,13 +37,13 @@ describe('GoAboutProduct', () => {
     })
 
     it('should initialize object and still keep hal methods', async () => {
-      assert.equal(this.product.getLink('self').href, this.fakeProduct._links.self.href)
+      assert.equal(this.product.getLink('self'), this.fakeProduct._links.self.href)
     })
 
     it('should initialize object fine if properties already have HALResource methods', async () => {
       this.product = new GoAboutProduct(new HALResource(this.fakeProduct), this.fakeGoAbout)
 
-      assert.equal(this.product.getLink('self').href, this.fakeProduct._links.self.href)
+      assert.equal(this.product.getLink('self'), this.fakeProduct._links.self.href)
     })
 
     it('should initialize object and set GoAbout properties in order to use GoAbout methods', async () => {

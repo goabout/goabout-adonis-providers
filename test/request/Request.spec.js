@@ -178,7 +178,7 @@ describe('RequestService', () => {
       const options = { url: 'https://hel.lo' }
       const result = await this.request.promisifedRequest(options)
 
-      assert.equal(result.halBody.getLink('self').href, 'https://self.href')
+      assert.equal(result.halBody.getLink('self'), 'https://self.href')
     })
 
     it('should return error when failed', async () => {

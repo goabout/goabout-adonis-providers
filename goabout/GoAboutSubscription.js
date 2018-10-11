@@ -36,7 +36,7 @@ class GoAboutSubscription extends GoAboutProduct {
     let productToReturn = null
 
     this.applicableProducts.some(product => {
-      if (product.getLink('self').href === productHref) productToReturn = product
+      if (product.getLink('self') === productHref) productToReturn = product
       return productToReturn
     })
 

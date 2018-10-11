@@ -85,7 +85,7 @@ class GoAboutBooking extends HALResource {
 
       // Throw error if not found
     if (!ignoreMissing && !eventData) {
-      const internalError = new this.$Errors.General({ message: 'E_NO_EVENT_FOUND', details: `${type} event for ${this.getLink('self').href} was not found` })
+      const internalError = new this.$Errors.General({ message: 'E_NO_EVENT_FOUND', details: `${type} event for ${this.getLink('self')} was not found` })
       this.$Raven.captureException(internalError)
       throw new this.$Errors.Crash({ message: 'E_NO_EVENT_FOUND' })
     }
@@ -96,13 +96,13 @@ class GoAboutBooking extends HALResource {
   async getProduct() {
     const link = this.getLink('http://rels.goabout.com/product')
     if (!link) {
-      const error = new this.$Errors.Crash({ message: 'E_NO_PRODUCT_FOUND', details: `No product for booking ${this.getLink('self').href}` })
+      const error = new this.$Errors.Crash({ message: 'E_NO_PRODUCT_FOUND', details: `No product for booking ${this.getLink('self')}` })
       this.$Raven.captureException(error)
       throw error
     }
 
     if (!this.product) {
-      this.product = await this.$GoAbout.getProductOrSubscription({ url: this.getLink('http://rels.goabout.com/product').href })
+      this.product = await this.$GoAbout.getProductOrSubscription({ url: this.getLink('http://rels.goabout.com/product') })
     }
 
     return this.product
@@ -120,7 +120,7 @@ class GoAboutBooking extends HALResource {
   async getUser() {
     if (!this.user) {
       this.user = await this.$GoAbout.getUser({
-        url: this.getLink('http://rels.goabout.com/user').href
+        url: this.getLink('http://rels.goabout.com/user')
       })
     }
 

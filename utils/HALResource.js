@@ -48,18 +48,16 @@ class HALResource {
     return this._embedded ? Object.keys(this._embedded) : []
   }
 
-  getLinks(rel, filterCallback, begin, end) {
+  getLinks(rel, begin, end) {
     if (!this._links || !(rel in this._links)) {
       return []
     }
 
-    let links = [].concat(this._links[rel])
+    const links = [].concat(this._links[rel])
 
-    if (filterCallback) {
-      links = links.filter(filterCallback)
-    }
-
-    return links.slice(begin || 0, end || links.length)
+    return links
+      .slice(begin || 0, end || links.length)
+      .map(link => link.href || link)
   }
 
   getLink(rel, filterCallback, def) {
@@ -180,7 +178,6 @@ class HALResource {
 
     return this
   }
-
 }
 
 module.exports = HALResource
