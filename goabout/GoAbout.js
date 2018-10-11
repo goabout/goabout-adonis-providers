@@ -346,8 +346,8 @@ class GoAbout {
 
   userValidation() {
     return {
-      name: 'required|min:3',
-      phonenumber: 'required|min:4',
+      name: 'min:2',
+      phonenumber: 'min:4',
       email: 'required|email'
     }
   }
