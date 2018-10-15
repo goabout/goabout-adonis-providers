@@ -1,7 +1,6 @@
 /*
   Extends HALResource with CLS and Routes but then requires Adonis modules
  */
-const urlTemplate = require('url-templates')
 const HALResource = require('./HALResource')
 
 // Since JS doesn't really have private properties, we can reference private values via symbols.
@@ -43,7 +42,7 @@ class HALResourceWithRoutes extends HALResource {
 
     path = this.$matchAgainst({ path, propertiesToMatch: this[$].template })
 
-    const propsToFulfill = this.$mergePropertiesToFillWithContext({ existingProperties: props })
+    const propsToFulfill = this.$mergePropertiesToFillWithContext({ path, existingProperties: props })
 
     path = this.$matchAgainst({ path, propertiesToMatch: propsToFulfill })
 
@@ -57,7 +56,8 @@ class HALResourceWithRoutes extends HALResource {
     return props && props.length ? props.map(v => v.replace(/\{|\}/gi, '')) : []
   }
 
-  $mergePropertiesToFillWithContext({ requiredPropertes, existingProperties = {} }) {
+  $mergePropertiesToFillWithContext({ path, existingProperties = {} }) {
+    const requiredPropertes = this.$getRequiredProperties({ path })
     if (!requiredPropertes.length) return null
 
     const fulfilledProperties = {}
@@ -85,7 +85,7 @@ class HALResourceWithRoutes extends HALResource {
   }
 
   $crashIfMissingProps({ path, template }) {
-    const properties = path.match(/\{.*?\}/gi)
+    const properties = this.$getRequiredProperties({ path })
 
     if (properties && properties.length) throw new this[$].Errors.Crash('E_NO_LINK_PROPERTY_FOUND', `No link property found for ${JSON.stringify(properties)} in ${template}`)
   }
