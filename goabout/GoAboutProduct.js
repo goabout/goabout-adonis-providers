@@ -14,6 +14,9 @@ class GoAboutProduct extends HALResource {
     this.$Log = GoAboutInstance.$Log
     this.$Raven = GoAboutInstance.$Raven
 
+    // This HALResource is enriched with Routes
+    this.$HALResource = GoAboutInstance.$HALResource
+
     // Left after sanitizing
     this.$shownProperties = ['id', 'name', 'logoHref', 'moreInfoHref', 'description', 'extendedDescription', 'categories', 'supportEmail', 'internalProperties', 'properties']
   }
@@ -24,7 +27,7 @@ class GoAboutProduct extends HALResource {
   }
 
   toSanitizedHal() {
-    const sanitizedProduct = new HALResource(_.pick(this, this.$shownProperties))
+    const sanitizedProduct = new this.$HALResource(_.pick(this, this.$shownProperties))
     if (this.internalProperties) sanitizedProduct.provider = this.internalProperties.provider
 
     if (this.getLink('self')) sanitizedProduct.addLink(this.isSubscription ? 'original-subscription' : 'original-product', this.getLink('self'))

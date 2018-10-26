@@ -62,6 +62,7 @@ describe('GoAboutSubscription', () => {
       $Log: { something: fake.string },
       $Raven: { something: fake.string },
       request: sandbox.stub().resolves({ halBody: new HALResource(this.fakeProducts) }),
+      $HALResource: HALResource,
       getResourceId: sandbox.stub().returns(this.fakeId)
     }
 

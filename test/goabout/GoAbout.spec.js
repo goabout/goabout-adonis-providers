@@ -57,7 +57,8 @@ describe('GoAbout', () => {
       Env: this.Env,
       Errors: config.Errors,
       Log: config.Log,
-      Raven: config.Raven
+      Raven: config.Raven,
+      HALResource,
     })
     this.GoAbout.token = this.token
   })

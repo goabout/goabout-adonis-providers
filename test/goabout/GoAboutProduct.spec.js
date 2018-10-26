@@ -24,6 +24,7 @@ describe('GoAboutProduct', () => {
       $Errors: { something: fake.string },
       $Log: { something: fake.string },
       $Raven: { something: fake.string },
+      $HALResource: HALResource,
       getResourceId: sandbox.stub().returns(fake.uuid)
     }
 

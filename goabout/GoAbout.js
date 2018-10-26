@@ -1,7 +1,6 @@
 const _ = require('lodash')
 const moment = require('moment')
 
-const HALResource = require('../utils/HALResource')
 const GoAboutBooking = require('./GoAboutBooking')
 const GoAboutProduct = require('./GoAboutProduct')
 const GoAboutSubscription = require('./GoAboutSubscription')
@@ -58,7 +57,7 @@ class GoAbout {
 
     // If no resource provided, then use root of the api
     let resourceToCall = !resource ? await this.getRoot() : resource
-    if (!resourceToCall.getLink) resourceToCall = new HALResource(resourceToCall)
+    if (!resourceToCall.getLink) resourceToCall = new this.$HALResource(resourceToCall)
 
     let requestUrl = resourceToCall.getLink(relation)
     requestUrl = requestUrl || undefined

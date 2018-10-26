@@ -13,6 +13,9 @@ class GoAboutBooking extends HALResource {
     this.$Log = GoAboutInstance.$Log
     this.$Raven = GoAboutInstance.$Raven
 
+    // This HALResource is enriched with Routes
+    this.$HALResource = GoAboutInstance.$HALResource
+
     this.$alterableProperties = ['price']
     this.$shownProperties = ['name', 'description', 'logoHref', 'properties']
   }
@@ -132,7 +135,7 @@ class GoAboutBooking extends HALResource {
   }
 
   toSanitizedHal() {
-    return new HALResource(this.toJSON())
+    return new this.$HALResource(this.toJSON())
   }
 }
 

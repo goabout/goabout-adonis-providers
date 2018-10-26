@@ -52,14 +52,21 @@ describe('HALResourceWithRoutes', () => {
     it('should add templated links within predefined template and with missing segments', () => {
       const resource = new HALResourceWithRoutes({}, this.providers)
 
-      resource.addTemplatedLink('deprecated-apps', 'IS_DEPRECATED_APP', { ignoreMissingProps: true })
+      resource.addTemplatedLink('deprecated-apps', 'IS_DEPRECATED_APP', null, { ignoreMissingProps: true })
       assert.equal(resource._links['deprecated-apps'].href, 'https://test.goabout.com{DEPRECATED_APPS}/{apps}/{os}/{version}')
     })
 
     it('should use custom path instead', () => {
       const resource = new HALResourceWithRoutes({}, this.providers)
 
-      resource.addTemplatedLink('product', 'CUSTOM_PRODUCT', { customPath: '/custom/path' })
+      resource.addTemplatedLink('product', '/custom/path')
+      assert.equal(resource._links.product.href, 'https://test.goabout.com/custom/path')
+    })
+
+    it('should explicitly use custom path instead', () => {
+      const resource = new HALResourceWithRoutes({}, this.providers)
+
+      resource.addTemplatedLink('product', 'CUSTOM_PRODUCT', null, { customPath: '/custom/path' })
       assert.equal(resource._links.product.href, 'https://test.goabout.com/custom/path')
     })
   })

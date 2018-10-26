@@ -29,16 +29,14 @@ class HALResourceWithRoutes extends HALResource {
   }
 
 
-  addTemplatedLink(rel, template, { props, customPath, ignoreMissingProps } = {}) {
-    const link = this.$generate({ template, customPath, props, ignoreMissingProps })
+  addTemplatedLink(rel, templateOrPath, props = {}, { customPath, ignoreMissingProps } = {}) {
+    const link = this.$generate({ templateOrPath, customPath, props, ignoreMissingProps })
     this.addLink(rel, link)
     return this
   }
 
-  $generate({ template, customPath, props, ignoreMissingProps }) {
-    let path = customPath || this[$].template[template]
-    if (path === undefined) throw new this[$].Errors.Crash('E_NO_TEMPLATE_FOUND', `No template for ${template}`)
-
+  $generate({ templateOrPath, customPath, props, ignoreMissingProps }) {
+    let path = customPath || this[$].template[templateOrPath] || templateOrPath
 
     path = this.$matchAgainst({ path, propertiesToMatch: this[$].template })
 
@@ -46,7 +44,7 @@ class HALResourceWithRoutes extends HALResource {
 
     path = this.$matchAgainst({ path, propertiesToMatch: propsToFulfill })
 
-    if (!ignoreMissingProps) this.$crashIfMissingProps({ path, template })
+    if (!ignoreMissingProps) this.$crashIfMissingProps({ path, templateOrPath })
 
     return this[$].host + path
   }
@@ -63,7 +61,7 @@ class HALResourceWithRoutes extends HALResource {
     const fulfilledProperties = {}
 
     requiredPropertes.forEach(key => {
-      fulfilledProperties[key] = existingProperties[key] || this[$].CLS.get(key)
+      fulfilledProperties[key] = (existingProperties && existingProperties[key]) || this[$].CLS.get(key)
     })
 
     return fulfilledProperties
