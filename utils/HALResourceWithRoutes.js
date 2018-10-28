@@ -14,14 +14,14 @@ class HALResourceWithRoutes extends HALResource {
     Object.keys(providers).forEach(key => { this[$][key] = providers[key] })
     this[$].template = this[$].Config.get('hal.templates')
 
-    this.init()
+    this.init({ ignoreBrokenInit: true })
   }
 
-  init({ request } = {}) {
+  init({ request, ignoreBrokenInit } = {}) {
     const host = request ? (request.header('x-forwarded-host') || request.header('host')) : this[$].CLS.get('request.host')
     const protocol = request ? request.header('x-forwarded-proto') : this[$].CLS.get('request.protocol')
 
-    if (!host || !protocol) {
+    if (!ignoreBrokenInit && (!host || !protocol)) {
       throw new this[$].Errors.Crash('E_NO_HOSTNAME_FOUND')
     }
 
