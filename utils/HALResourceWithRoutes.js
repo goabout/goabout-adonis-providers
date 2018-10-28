@@ -36,7 +36,8 @@ class HALResourceWithRoutes extends HALResource {
   }
 
   $generate({ templateOrPath, customPath, props, ignoreMissingProps }) {
-    let path = customPath || this[$].template[templateOrPath] || templateOrPath
+    const templatePath = this[$].template[templateOrPath] !== undefined ? this[$].template[templateOrPath] : templateOrPath
+    let path = customPath || templatePath
 
     path = this.$matchAgainst({ path, propertiesToMatch: this[$].template })
 
