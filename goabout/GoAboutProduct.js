@@ -34,7 +34,7 @@ class GoAboutProduct extends HALResource {
 
     if (!this.isSubscription && this.getEmbed('http://rels.goabout.com/product-images')) {
       const productImages = this.getEmbed('http://rels.goabout.com/product-images')
-      productImages.addLinks('items', productImages.getLinks('item').map(r => r.href))
+      productImages.addLinks('items', productImages.getLinks('item'))
       productImages.removeLinks('item')
       sanitizedProduct.addEmbed('images', productImages)
     }
