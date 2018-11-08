@@ -116,10 +116,10 @@ class GoAbout {
   }
 
   // If no url, getting self
-  async getUser({ url } = {}) {
-    if (!url) return this.getSelfUser()
+  async getUser({ url, fresh } = {}) {
+    if (!url) return this.getSelfUser({ fresh })
 
-    const userResponse = await this.$Request.send({ url, token: this.supertoken, useCache: false })
+    const userResponse = await this.$Request.send({ url, token: this.supertoken, useCache: !fresh })
 
     if (!userResponse.halBody) throw new this.$Errors.Crash('E_FAILED_TO_GET_USER')
 
@@ -127,10 +127,12 @@ class GoAbout {
     return userResponse.halBody
   }
 
-  async getSelfUser() {
+  async getSelfUser({ fresh }) {
     const api = await this.getRoot()
+    const embeddedUser = api.getEmbed('http://rels.goabout.com/authenticated-user')
 
-    this.user = api.getEmbed('http://rels.goabout.com/authenticated-user')
+    this.user = (fresh && embeddedUser && embeddedUser.getLink('self')) ? await this.getUser({ url: embeddedUser.getLink('self'), fresh }) : embeddedUser
+
     if (this.user) {
       this.user.id = this.getResourceId({ resource: this.user })
       if (api.getLink('http://rels.goabout.com/agencies')) this.user.superuser = true
