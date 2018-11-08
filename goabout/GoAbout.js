@@ -119,7 +119,7 @@ class GoAbout {
   async getUser({ url } = {}) {
     if (!url) return this.getSelfUser()
 
-    const userResponse = await this.$Request.send({ url, token: this.supertoken, useCache: true })
+    const userResponse = await this.$Request.send({ url, token: this.supertoken, useCache: false })
 
     if (!userResponse.halBody) throw new this.$Errors.Crash('E_FAILED_TO_GET_USER')
 
