@@ -233,7 +233,6 @@ class GoAbout {
   // TODO Add redis support
   async getUserSubscription({ subscriptionId, subscriptionHref }) {
     if (!subscriptionHref) subscriptionHref = await this.generateProductHref(subscriptionId) // eslint-disable-line
-
     if (!this.activeSubscription) {
       const userSubscriptions = await this.getUserSubscriptions()
 
@@ -288,7 +287,7 @@ class GoAbout {
       const bookingResource = bookingResponse.halBody.getEmbed('http://rels.goabout.com/booking')
       booking = new this.Booking(bookingResource, this)
 
-      await Promise.all([
+      const events = [
         booking.setEvent({
           eventType: 'SUBSCRIPTION_HREF',
           eventData: subscription.getLink('self')
@@ -301,7 +300,16 @@ class GoAbout {
           eventType: 'CREATED_AT',
           eventData: moment().format('YYYY-MM-DDTHH:mm:ssZ')
         })
-      ])
+      ]
+
+      if (this.$Env.get('CREATE_SPECIMEN_USAGES') === 'true') {
+        events.push(booking.setEvent({
+          eventType: 'specimen',
+          eventData: true
+        }))
+      }
+
+      await Promise.all(events)
     }
 
     return booking
@@ -375,7 +383,7 @@ class GoAbout {
 
   // Or product-subscription href
   async generateProductHref(productId) {
-    if (!productId || (_.isString(productId) && !productId.length)) throw new this.$Errors.BadRequest('E_NO_SUBSCRIPTION_OR_PRODUCT_ID')
+    if (!productId || (_.isString(productId) && !productId.length)) throw new this.$Errors.BadRequest({ message: 'E_NO_SUBSCRIPTION_OR_PRODUCT_ID' })
 
     const root = await this.getRoot()
     return `${root.getLink('self')}product/${productId}`
