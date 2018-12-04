@@ -4,11 +4,11 @@ const initializeLogger = (loggingLevel, nodeEnv, CLS) => {
   const printFormat = winston.format.printf(info => {
     const prependers = []
 
-    if (CLS && nodeEnv === 'production') {
+    if (CLS) {
       const session = CLS.get('session')
       const userUid = CLS.get('userUid')
       const clsData = `${userUid ? userUid.slice(0, 10) : ''}${userUid && session ? '-' : ' '}${session || ''}`
-      if (clsData) prependers.push(`\u001b[35m${clsData}\u001b[0m`)
+      if (clsData) prependers.push(`\x1b[35m${clsData}\x1b[0m`)
     }
 
     return `${prependers.join(' ')} ${info.level} ${info.message}`
