@@ -15,7 +15,7 @@ const initializeLogger = (loggingLevel, nodeEnv, CLS) => {
   })
 
   const consoleFormats = [
-    winston.format.colorize(),
+    // winston.format.colorize(),
     winston.format.splat(),
     printFormat
   ]
