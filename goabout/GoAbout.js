@@ -163,8 +163,9 @@ class GoAbout {
 
     // Filter out not requested props
     if (requestedProperties && requestedProperties.length) {
+      const keptProperties = [...requestedProperties, 'email', 'phonenumber', 'name']
       Object.keys(userProperties).forEach(key => {
-        if (!requestedProperties.includes(key)) delete userProperties[key]
+        if (!keptProperties.includes(key)) delete userProperties[key]
       })
     }
 
@@ -373,7 +374,7 @@ class GoAbout {
     if (!this.user) await this.getUser()
 
     userProperties.email = this.user.email
-    if (!userProperties.name) userProperties.name = this.user.name
+    if (!userProperties.name) userProperties.name = (userProperties.firstName && userProperties.lastName) ? `${userProperties.firstName} ${userProperties.lastName}` : this.user.name
     if (!userProperties.phonenumber) userProperties.phonenumber = this.user.phonenumber
 
     const validation = await this.$Validator.validateAll(userProperties, this.userValidation())
