@@ -142,7 +142,7 @@ class GoAbout {
     return this.user
   }
 
-  async getUserProperties() {
+  async getUserProperties({ requestedProperties } = {}) {
     if (this.$userProperties) return this.$userProperties
 
     const user = await this.getUser()
@@ -160,6 +160,13 @@ class GoAbout {
     if (userWithSupertoken.email) userProperties.email = userWithSupertoken.email
     if (userWithSupertoken.name) userProperties.name = userWithSupertoken.name
     if (userWithSupertoken.phonenumber) userProperties.phonenumber = userWithSupertoken.phonenumber
+
+    // Filter out not requested props
+    if (requestedProperties && requestedProperties.length) {
+      Object.keys(userProperties).forEach(key => {
+        if (!requestedProperties.includes(key)) delete userProperties[key]
+      })
+    }
 
     return userProperties
   }
