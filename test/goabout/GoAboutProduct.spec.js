@@ -68,5 +68,18 @@ describe('GoAboutProduct', () => {
 
       assert.equal(this.result.extraProperty, undefined)
     })
+
+
+    it('should include provider and warning', () => {
+      this.product.internalProperties = {
+        provider: 'ovelo',
+        warning: 'Bla-bla-bla'
+      }
+
+      this.result = this.product.toSanitizedHal()
+
+      assert.equal(this.result.provider, 'ovelo')
+      assert.equal(this.result.warning, 'Bla-bla-bla')
+    })
   })
 })

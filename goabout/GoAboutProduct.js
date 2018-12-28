@@ -28,7 +28,10 @@ class GoAboutProduct extends HALResource {
 
   toSanitizedHal() {
     const sanitizedProduct = new this.$HALResource(_.pick(this, this.$shownProperties))
-    if (this.internalProperties) sanitizedProduct.provider = this.internalProperties.provider
+    if (this.internalProperties) {Object.assign(sanitizedProduct, {
+      provider: this.internalProperties.provider,
+      warning: this.internalProperties.warning || null
+    })}
 
     if (this.getLink('self')) sanitizedProduct.addLink(this.isSubscription ? 'original-subscription' : 'original-product', this.getLink('self'))
 
