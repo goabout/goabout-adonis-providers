@@ -28,7 +28,6 @@ class VerifyJWTToken {
         issuer: this.$Env.get('OAUTH_ISSUER'),
         audience: this.$Env.get('OAUTH_AUDIENCE')
       })
-      this.$Log.debug('User is authorized with JWT token')
     } catch (err) {
       this.$Log.debug('User is authorized with JWT token but the token is invalid')
       this.$Log.error(err.message)

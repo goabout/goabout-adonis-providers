@@ -30,7 +30,7 @@ class Request {
    * If request did not pass at all or gave back 400/500 errors, then it will throw a error passing statusCode and a body of errors. This error can be reused and sent right to the client
    */
 
-  async send({ url, method, token, body, query, headers, useCache, forceCacheUpdate, errorHandler, doNotReportFailing }) {
+  async send({ url, method, token, body, query, headers, useCache, forceCacheUpdate, errorHandler, doNotReportFailing, timeout }) {
     let response = null
     if (!method) method = 'GET' // eslint-disable-line
 
@@ -56,7 +56,7 @@ class Request {
         headers: headersToSend,
         body: (method !== 'GET' && body) ? body : undefined,
         qs: query || undefined,
-        timeout: 30000
+        timeout: timeout || 30000
       })
     } catch (err) {
       if (!doNotReportFailing) {
