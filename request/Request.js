@@ -30,7 +30,7 @@ class Request {
    * If request did not pass at all or gave back 400/500 errors, then it will throw a error passing statusCode and a body of errors. This error can be reused and sent right to the client
    */
 
-  async send({ url, method, token, body, query, headers, useCache, forceCacheUpdate, errorHandler, doNotReportFailing, timeout }) {
+  async send({ url, method, token, body, query, headers, useCache, forceCacheUpdate, errorHandler, doNotReportFailing, includeOriginalErrorResponse, timeout }) {
     let response = null
     if (!method) method = 'GET' // eslint-disable-line
 
@@ -67,7 +67,7 @@ class Request {
       throw new this.$Errors.NoResponse()
     }
 
-    this.throwErrorIfFailingRequest({ response, url, errorHandler })
+    this.throwErrorIfFailingRequest({ response, url, errorHandler, includeOriginalErrorResponse })
 
     if (useCache || forceCacheUpdate) {
       await this.saveToRedis({
@@ -105,9 +105,9 @@ class Request {
 
   // TODO Make tests
   // Throw error is result is 4xx or 5xx
-  throwErrorIfFailingRequest({ response, url, errorHandler }) {
+  throwErrorIfFailingRequest({ response, url, errorHandler, includeOriginalErrorResponse }) {
     if (response.statusCode >= 400) {
-      this.$Log.info(`Failed ${url} with answer ${JSON.stringify(response.body)}`)
+      this.$Log.info(`Failed ${url} with answer ${JSON.stringify(response.body).slice(0, 5000)}`)
 
       let error = null
       const { message, details, hint, validationErrors } = errorHandler ? errorHandler(response) : this.defaultErrorHandler(response)
@@ -131,6 +131,7 @@ class Request {
 
       error.providerUrl = url
       error.providerResponse = response.body
+      if (includeOriginalErrorResponse) error.originalResponse = response
 
       throw error
     }
