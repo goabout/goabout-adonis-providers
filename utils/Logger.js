@@ -4,7 +4,7 @@ const initializeLogger = (loggingLevel, nodeEnv, CLS) => {
   const printFormat = winston.format.printf(info => {
     const prependers = []
 
-    if (CLS) {
+    if (CLS && nodeEnv === 'production') {
       const session = CLS.get('session')
       const userUid = CLS.get('userUid')
       const clsData = `${userUid ? userUid.slice(0, 10) : ''}${userUid && session ? '-' : ' '}${session || ''}`
@@ -15,7 +15,7 @@ const initializeLogger = (loggingLevel, nodeEnv, CLS) => {
   })
 
   const consoleFormats = [
-    // winston.format.colorize(),
+    winston.format.colorize(),
     winston.format.splat(),
     printFormat
   ]
