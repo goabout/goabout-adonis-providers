@@ -5,6 +5,8 @@ class DDTraceMiddleware {
   }
 
   async handle(ctx, next) {
+    if (!ctx.req._datadog) return next()
+
     const matchedRoute = this.$Route.match(ctx.request.url(), ctx.request.method(), ctx.request.hostname()).route._route
     const traceId = ctx.req._datadog.span.context().toTraceId()
 
