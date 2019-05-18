@@ -9,7 +9,6 @@ let $pemExpires = moment()
 // To make it work, fill OAUTH_PEM (link to PEM certificate), OAUTH_ISSUER and OAUTH_AUDIENCE in your env file
 
 class VerifyJWTToken {
-
   constructor(Log, Errors, Env, Request) {
     this.$Log = Log
     this.$Errors = Errors
@@ -25,7 +24,7 @@ class VerifyJWTToken {
 
     try {
       request.jwtToken = jwt.verify(request.token, pem, {
-        issuer: this.$Env.get('OAUTH_ISSUER'),
+        issuer: this.$Env.get('OAUTH_ISSUER').split(','),
         audience: this.$Env.get('OAUTH_AUDIENCE')
       })
     } catch (err) {
@@ -65,8 +64,6 @@ class VerifyJWTToken {
 
     this.setPem(newPem)
   }
-
-
 }
 
 module.exports = VerifyJWTToken

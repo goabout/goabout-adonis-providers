@@ -37,7 +37,7 @@ describe('VerifyJWTToken', () => {
       sandbox.stub(this.middleware, 'isExpiredPem')
       sandbox.stub(jwt, 'verify')
 
-      process.env.OAUTH_ISSUER = 'SOME_ISSUER'
+      process.env.OAUTH_ISSUER = 'SOME_ISSUER,SOME_ISSUER_2'
       process.env.OAUTH_AUDIENCE = 'SOME_AUDIENCE'
 
       this.fakeRequest.token = this.jwtToken
@@ -56,7 +56,7 @@ describe('VerifyJWTToken', () => {
 
       assert.equal(jwt.verify.getCall(0).args[0], this.jwtToken)
       assert.equal(jwt.verify.getCall(0).args[1], this.fakePem)
-      assert.deepEqual(jwt.verify.getCall(0).args[2], { 'audience': 'SOME_AUDIENCE', 'issuer': 'SOME_ISSUER' })
+      assert.deepEqual(jwt.verify.getCall(0).args[2], { 'audience': 'SOME_AUDIENCE', 'issuer': ['SOME_ISSUER', 'SOME_ISSUER_2'] })
 
       assert.deepEqual(this.fakeRequest.jwtToken, this.jwtDecodedResult)
       assert(this.calledNext)

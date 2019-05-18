@@ -1,7 +1,6 @@
 const redisKey = 'auth0:client_credentials'
 
 class Auth0 {
-
   constructor(providers = {}) {
     Object.keys(providers).forEach(key => { this[`$${key}`] = providers[key] })
     if (!this.$Log) this.$Log = console
@@ -9,7 +8,7 @@ class Auth0 {
     this.clientId = this.$Env.get('OAUTH_CLIENT_ID')
     this.clientSecret = this.$Env.get('OAUTH_CLIENT_SECRET')
     this.audience = this.$Env.get('OAUTH_AUDIENCE')
-    this.issuer = this.$Env.get('OAUTH_ISSUER')
+    this.issuer = this.$Env.get('OAUTH_ISSUER').split(',')[0]
 
     if (!this.clientId || !this.clientSecret || !this.audience || !this.issuer) throw new this.$Errors.Crash({ message: 'E_MISSING_AUTH0_CONFIG' })
   }
