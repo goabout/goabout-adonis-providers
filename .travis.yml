@@ -4,7 +4,7 @@ node_js: 7.10.0
 script: scripts/_integrate.sh
 
 cache:
-  yarn: true
+  npm: true
   directories:
     - "node_modules"
 

@@ -6,7 +6,7 @@ describe('Auth0', () => {
     this.Request = { send: sandbox.stub() }
     this.Env = new Env()
 
-    this.Env.set('OAUTH_ISSUER', 'https://goabout.eu.auth0.com/')
+    this.Env.set('OAUTH_ISSUER', 'https://goabout.eu.auth0.com/,https://auth.goabout.com/')
     this.Env.set('OAUTH_AUDIENCE', 'https://api.goabout.com')
     this.Env.set('OAUTH_CLIENT_ID', 'client-id')
     this.Env.set('OAUTH_CLIENT_SECRET', 'client-secret')

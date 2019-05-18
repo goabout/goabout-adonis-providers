@@ -7,4 +7,4 @@ cd "$dirname/.."
 echo "PHASE: Test..."
 
 node_modules/.bin/gulp test
-yarn run lint
+npm run lint

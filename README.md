@@ -10,14 +10,14 @@ It includes:
 * Utils such as forEach for generator functions
 
 ### Requirements
-* [NodeJS 7.4.0, NPM & Yarn](https://nodejs.org/download/)
+* [NodeJS 9+, NPM](https://nodejs.org/download/)
 * [Gulp](http://gulpjs.com/)
 
 ### Installation for development:
 
 * Open terminal and proceed to app folder
 * Make sure you have nodejs & gulp globally installed
-* Run `yarn install`
+* Run `npm install`
 * Run `gulp autotest`
 * Enjoy!
 
