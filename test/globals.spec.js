@@ -8,7 +8,7 @@ module.exports = function () {
   this.result = null
   this.errorResult = null
   this.config = {}
-  this.sandbox = sinon.sandbox.create()
+  this.sandbox = sinon.createSandbox()
   this.fake = require('casual')
   this.l = console.log
 }
