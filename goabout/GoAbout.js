@@ -228,6 +228,8 @@ class GoAbout {
         const subscription = resource.getEmbed('http://rels.goabout.com/product')
         if (subscription && subscription.isSubscription) {
           subscription.addLink('subscription', resource.getLink('self'))
+          subscription.validFrom = resource.validFrom
+          subscription.validUntil = resource.validUntil
           subscriptions.push(new GoAboutSubscription(subscription, resource.properties, this))
         }
       })

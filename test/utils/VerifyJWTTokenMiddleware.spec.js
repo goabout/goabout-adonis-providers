@@ -145,6 +145,7 @@ describe('VerifyJWTToken', () => {
     })
 
     it('should throw error if oath url is not set', async () => {
+      this.env.set('OAUTH_PEM', '')
       try {
         await this.middleware.getNewPem()
         assert.fail()

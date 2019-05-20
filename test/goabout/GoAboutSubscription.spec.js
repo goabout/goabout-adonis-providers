@@ -13,6 +13,8 @@ describe('GoAboutSubscription', () => {
       description: fake.sentence,
       categories: fake.array_of_words(),
       supportEmail: fake.email,
+      validFrom: fake.moment.toISOString(),
+      validUntil: fake.moment.toISOString(),
       extraProperty: fake.sentence,
       _links: {
         self: {
@@ -179,7 +181,7 @@ describe('GoAboutSubscription', () => {
     it('should keep the right props', () => {
       this.result = this.subscription.toSanitizedHal()
 
-      assert.deepEqual(Object.keys(this.result), ['id', 'name', 'logoHref', 'moreInfoHref', 'description', 'categories', 'supportEmail', 'properties', '_links'])
+      assert.deepEqual(Object.keys(this.result), ['id', 'name', 'logoHref', 'moreInfoHref', 'description', 'categories', 'supportEmail', 'properties', 'validFrom', 'validUntil', '_links'])
     })
 
     it('should avoid extra props', () => {

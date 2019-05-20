@@ -18,7 +18,7 @@ class GoAboutProduct extends HALResource {
     this.$HALResource = GoAboutInstance.$HALResource
 
     // Left after sanitizing
-    this.$shownProperties = ['id', 'name', 'logoHref', 'moreInfoHref', 'description', 'extendedDescription', 'categories', 'supportEmail', 'internalProperties', 'properties']
+    this.$shownProperties = ['id', 'name', 'logoHref', 'moreInfoHref', 'description', 'extendedDescription', 'categories', 'supportEmail', 'internalProperties', 'properties', 'validFrom', 'validUntil']
   }
 
   // To get product/subscription using supertoken (gives back priceRule etc)
@@ -28,10 +28,12 @@ class GoAboutProduct extends HALResource {
 
   toSanitizedHal() {
     const sanitizedProduct = new this.$HALResource(_.pick(this, this.$shownProperties))
-    if (this.internalProperties) {Object.assign(sanitizedProduct, {
-      provider: this.internalProperties.provider,
-      warning: this.internalProperties.warning || null
-    })}
+    if (this.internalProperties) {
+      Object.assign(sanitizedProduct, {
+        provider: this.internalProperties.provider,
+        warning: this.internalProperties.warning || null
+      })
+    }
 
     if (this.getLink('self')) sanitizedProduct.addLink(this.isSubscription ? 'original-subscription' : 'original-product', this.getLink('self'))
 
