@@ -7,6 +7,9 @@ const initializeLogger = (loggingLevel, nodeEnv, CLS) => {
       info.user_id = CLS.get('userUid')
     }
 
+    const timestamp = new Date()
+    info['@timestamp'] = timestamp.toISOString()
+
     return info
   })
 
