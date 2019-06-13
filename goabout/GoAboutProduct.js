@@ -18,7 +18,7 @@ class GoAboutProduct extends HALResource {
     this.$HALResource = GoAboutInstance.$HALResource
 
     // Left after sanitizing
-    this.$shownProperties = ['id', 'name', 'logoHref', 'moreInfoHref', 'description', 'extendedDescription', 'categories', 'supportEmail', 'internalProperties', 'properties', 'validFrom', 'validUntil']
+    this.$shownProperties = ['id', 'name', 'logoHref', 'moreInfoHref', 'description', 'extendedDescription', 'categories', 'supportEmail', 'internalProperties', 'properties', 'validFrom', 'validUntil', 'default']
   }
 
   // To get product/subscription using supertoken (gives back priceRule etc)

@@ -8,6 +8,9 @@ class GoAboutSubscription extends GoAboutProduct {
 
     this.properties = properties
     this.applicableProducts = []
+
+    const publicSubscriptionHref = this.$Env.get('PUBLIC_SUBSCRIPTION_HREF')
+    if (this.getLink('self') === publicSubscriptionHref) this.default = true
   }
 
   // TODO add Redis support
