@@ -7,7 +7,6 @@ const GoAboutSubscription = require('./GoAboutSubscription')
 const eventTypes = require('./eventTypes')
 
 class GoAbout {
-
   constructor(providers) {
     // Injected values
     Object.keys(providers).forEach(key => { this[`$${key}`] = providers[key] })
@@ -19,13 +18,11 @@ class GoAbout {
 
     // Variables
     this.token = null
-    this.supertoken = this.$Env.get('GOABOUT_SUPERTOKEN', undefined)
     this.user = null
 
     // Internal
     this.$bookings = []
     this.$subscriptions = null
-    this.$root = null
 
     this.eventTypes = eventTypes
   }
@@ -34,7 +31,7 @@ class GoAbout {
     Basic methods
   */
 
- /*
+  /*
   * @name request
   * @kind function
   *
@@ -56,7 +53,7 @@ class GoAbout {
     let response = null
 
     // If no resource provided, then use root of the api
-    let resourceToCall = !resource ? await this.getRoot() : resource
+    let resourceToCall = !resource ? await this.getRoot({ useSupertoken }) : resource
     if (!resourceToCall.getLink) resourceToCall = new this.$HALResource(resourceToCall)
 
     let requestUrl = resourceToCall.getLink(relation)
@@ -68,7 +65,7 @@ class GoAbout {
 
     // TODO Support for link params, currently just removes all link params :-(
     requestUrl = requestUrl.replace(/{\?.*}/g, '')
-    const requestToken = useSupertoken ? this.supertoken : (token || this.token)
+    const requestToken = useSupertoken ? await this.$Auth0.getToken() : (token || this.token)
 
     const config = {
       url: requestUrl,
@@ -101,25 +98,25 @@ class GoAbout {
     More specific methods, based on request and Request.send
   */
 
-  async getRoot({ forceCacheUpdate = false } = {}) {
-    if (!this.$root || forceCacheUpdate) {
-      const response = await this.$Request.send({
-        url: this.$Env.get('GOABOUT_API'),
-        token: this.token,
-        useCache: true,
-        forceCacheUpdate
-      })
-      this.$root = response.halBody
-    }
+  async getRoot({ forceCacheUpdate = false, useSupertoken } = {}) {
+    const token = useSupertoken ? await this.$Auth0.getToken() : this.token
 
-    return this.$root
+    const response = await this.$Request.send({
+      url: this.$Env.get('GOABOUT_API'),
+      token,
+      useCache: true,
+      forceCacheUpdate
+    })
+
+    return response.halBody
   }
 
   // If no url, getting self
   async getUser({ url, fresh } = {}) {
     if (!url) return this.getSelfUser({ fresh })
 
-    const userResponse = await this.$Request.send({ url, token: this.supertoken, useCache: false })
+    const supertoken = await this.$Auth0.getToken()
+    const userResponse = await this.$Request.send({ url, token: supertoken, useCache: false })
 
     if (!userResponse.halBody) throw new this.$Errors.Crash('E_FAILED_TO_GET_USER')
 
@@ -258,8 +255,8 @@ class GoAbout {
   // Not dependent on user
   async getProductOrSubscription({ id, url }) {
     if (!url) url = await this.generateProductHref(id) // eslint-disable-line
-
-    const productResponse = await this.$Request.send({ url, token: this.supertoken, useCache: true })
+    const token = await this.$Auth0.getToken()
+    const productResponse = await this.$Request.send({ url, token, useCache: true })
     const product = productResponse.halBody.isSubscription ? new GoAboutSubscription(productResponse.halBody, {}, this) : new GoAboutProduct(productResponse.halBody, this)
 
     this.$Log.info(`Got product/subscription ${url}`)
@@ -328,7 +325,7 @@ class GoAbout {
   async getBooking({ url }) {
     const bookingResponse = await this.$Request.send({ url, token: this.token, useCache: true })
 
-    //eslint-disable-next-line
+    // eslint-disable-next-line
     const booking = new GoAboutBooking(bookingResponse.halBody, this)
 
     this.$Log.info(`Got booking ${url}`)

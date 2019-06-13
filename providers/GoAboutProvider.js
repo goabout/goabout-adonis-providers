@@ -2,7 +2,6 @@ const { ServiceProvider } = require('@adonisjs/fold') // eslint-disable-line
 const GoAbout = require('../goabout/GoAbout')
 
 class GoAboutProvider extends ServiceProvider {
-
   register() {
     this.app.bind('GoAbout/providers/GoAbout', () => new GoAbout({
       Request: use('GoAbout/providers/Request'),
@@ -11,12 +10,12 @@ class GoAboutProvider extends ServiceProvider {
       Log: use('Log'),
       Raven: use('Raven'),
       Validator: use('Validator'),
-      HALResource: use('HALResource')
+      Auth0: use('Auth0'),
+      HALResource: use('HALResource'),
     }))
   }
 
   static bare() { return GoAbout }
-
 }
 
 
