@@ -2,7 +2,6 @@ const _ = require('lodash')
 const HALResource = require('../utils/HALResource')
 
 class Request {
-
   constructor(initRequest, Env, Log, Errors, Raven, Redis) {
     this.$Log = Log
     this.$Env = Env
@@ -30,7 +29,7 @@ class Request {
    * If request did not pass at all or gave back 400/500 errors, then it will throw a error passing statusCode and a body of errors. This error can be reused and sent right to the client
    */
 
-  async send({ url, method, token, body, query, headers, useCache, forceCacheUpdate, errorHandler, doNotReportFailing, includeOriginalErrorResponse, timeout }) {
+  async send({ url, method, token, body, query, headers, useCache, forceCacheUpdate, errorHandler, doNotReportFailing, includeOriginalErrorResponse, timeout, fullLogging }) {
     let response = null
     if (!method) method = 'GET' // eslint-disable-line
 
@@ -42,32 +41,37 @@ class Request {
       }
     }
 
-    this.$Log.info(`${method} to ${url} with body ${JSON.stringify(body || {})} and query ${JSON.stringify(query || {})}`)
 
     const headersToSend = Object.assign({}, headers)
     headersToSend.Accept = 'application/hal+json,application/json'
     if (token) headersToSend.Authorization = `Bearer ${token}`
 
+    const requestOptions = {
+      url,
+      method,
+      json: true,
+      headers: headersToSend,
+      body: (method !== 'GET' && body) ? body : undefined,
+      qs: query || undefined,
+      timeout: timeout || 30000,
+      fullLogging
+    }
+
+    this.$Log.info(`${method} to ${url} with body ${JSON.stringify(body || {})} and query ${JSON.stringify(query || {})}`, { request_url: url, request_method: requestOptions.method, request_query: requestOptions.qs, request_body: requestOptions.body })
+
+
     try {
-      response = await this.promisifedRequest({
-        url,
-        method,
-        json: true,
-        headers: headersToSend,
-        body: (method !== 'GET' && body) ? body : undefined,
-        qs: query || undefined,
-        timeout: timeout || 30000
-      })
+      response = await this.promisifedRequest(requestOptions)
     } catch (err) {
       if (!doNotReportFailing) {
-        this.$Log.error(`Error while requesting ${url} with body ${JSON.stringify(body || {})} and query ${JSON.stringify(query || {})}`)
+        this.$Log.error(`Error while requesting ${url} with body ${JSON.stringify(body || {})} and query ${JSON.stringify(query || {})}`, { request_url: url, request_method: requestOptions.method, request_query: requestOptions.qs, request_body: requestOptions.body })
         this.$Log.error(err)
         this.$Raven.captureException(err)
       }
       throw new this.$Errors.NoResponse()
     }
 
-    this.throwErrorIfFailingRequest({ response, url, errorHandler, includeOriginalErrorResponse })
+    this.throwErrorIfFailingRequest({ response, url, errorHandler, includeOriginalErrorResponse, requestOptions })
 
     if (useCache || forceCacheUpdate) {
       await this.saveToRedis({
@@ -77,7 +81,7 @@ class Request {
       })
     }
 
-     // Filter all the extra stuff from the request obj
+    // Filter all the extra stuff from the request obj
     return _.pick(response, ['statusCode', 'body', 'halBody', 'headers', 'elapsedTime'])
   }
 
@@ -90,7 +94,7 @@ class Request {
       })
 
       this.$initRequest(requestOptions, (error, response) => {
-        if (isDebug) this.$Log.debug(`Request to ${options.url} took ${response ? response.elapsedTime : ''}ms`)
+        if (isDebug) this.$Log.debug(`Request to ${options.url} took ${response ? response.elapsedTime : ''}ms`, { request_url: requestOptions.url, request_method: requestOptions.method, request_query: requestOptions.qs, request_body: requestOptions.body, response_body: options.fullLogging ? response.body : undefined, response_status_code: response.statusCode, response_elapsed_time: response.elapsedTime })
 
         if (error) {
           return reject(error)
@@ -105,9 +109,9 @@ class Request {
 
   // TODO Make tests
   // Throw error is result is 4xx or 5xx
-  throwErrorIfFailingRequest({ response, url, errorHandler, includeOriginalErrorResponse }) {
+  throwErrorIfFailingRequest({ response, url, errorHandler, includeOriginalErrorResponse, requestOptions }) {
     if (response.statusCode >= 400) {
-      this.$Log.info(`Failed ${url} with answer ${JSON.stringify(response.body).slice(0, 5000)}`)
+      this.$Log.info(`Failed ${url} (${response.statusCode}) with answer ${JSON.stringify(response.body).slice(0, 5000)}`, { request_url: url, request_method: requestOptions.method, request_query: requestOptions.qs, request_body: requestOptions.body, response_body: response.body, response_status_code: response.statusCode })
 
       let error = null
       const { message, details, hint, validationErrors } = errorHandler ? errorHandler(response) : this.defaultErrorHandler(response)
@@ -204,7 +208,6 @@ class Request {
 
     return `token:${token || this.token}:relation:${relation}`
   }
-
 }
 
 module.exports = Request

@@ -5,6 +5,7 @@ const initializeLogger = (loggingLevel, nodeEnv, CLS) => {
     if (CLS) {
       info.session_id = CLS.get('session')
       info.user_id = CLS.get('userUid')
+      info.client_id = CLS.get('clientId')
     }
 
     const timestamp = new Date()
