@@ -94,7 +94,7 @@ class Request {
       })
 
       this.$initRequest(requestOptions, (error, response) => {
-        if (isDebug) this.$Log.debug(`Request to ${options.url} took ${response ? response.elapsedTime : ''}ms`, { request_url: requestOptions.url, request_method: requestOptions.method, request_query: requestOptions.qs, request_body: requestOptions.body, response_body: options.fullLogging ? response.body : undefined, response_status_code: response.statusCode, response_elapsed_time: response.elapsedTime })
+        if (isDebug && !error) this.$Log.debug(`Request to ${options.url} took ${response ? response.elapsedTime : ''}ms`, { request_url: requestOptions.url, request_method: requestOptions.method, request_query: requestOptions.qs, request_body: requestOptions.body, response_body: options.fullLogging ? response.body : undefined, response_status_code: response.statusCode, response_elapsed_time: response.elapsedTime })
 
         if (error) {
           return reject(error)
