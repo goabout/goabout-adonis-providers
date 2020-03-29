@@ -4,7 +4,7 @@ const moment = require('moment')
 class Info {
 
   constructor() {
-    const infoFile = './.info'
+    const infoFile = './.build-info'
     const packageFile = './package.json'
 
     if (fs.existsSync(infoFile)) {
