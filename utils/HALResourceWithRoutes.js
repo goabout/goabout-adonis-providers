@@ -29,13 +29,13 @@ class HALResourceWithRoutes extends HALResource {
   }
 
 
-  addTemplatedLink(rel, templateOrPath, props = {}, { customPath, ignoreMissingProps } = {}) {
-    const link = this.$generate({ templateOrPath, customPath, props, ignoreMissingProps })
+  addTemplatedLink(rel, templateOrPath, props = {}, { customPath, ignoreMissingProps, skipRoot } = {}) {
+    const link = this.$generate({ templateOrPath, customPath, props, ignoreMissingProps, skipRoot })
     this.addLink(rel, link)
     return this
   }
 
-  $generate({ templateOrPath, customPath, props, ignoreMissingProps }) {
+  $generate({ templateOrPath, customPath, props, ignoreMissingProps, skipRoot }) {
     const templatePath = this[$].template[templateOrPath] !== undefined ? this[$].template[templateOrPath] : templateOrPath
     let path = customPath || templatePath
 
@@ -47,7 +47,7 @@ class HALResourceWithRoutes extends HALResource {
 
     if (!ignoreMissingProps) this.$crashIfMissingProps({ path, templateOrPath })
 
-    return this[$].host + path
+    return skipRoot ? path : (this[$].host + path)
   }
 
   $getRequiredProperties({ path }) {
