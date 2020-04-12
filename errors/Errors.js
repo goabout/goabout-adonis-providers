@@ -12,12 +12,13 @@ class Errors {
     this.$CLS = CLS
 
     class General extends NE.LogicalException {
-      constructor({ httpCode, message, details, hint, params, validationErrors } = {}) {
+      constructor({ httpCode, message, details, hint, url, params, validationErrors } = {}) {
         if (!message) message = 'E_FATAL_ERROR' //eslint-disable-line
         super(message, httpCode || 500)
 
         this.details = details || that.localize({ message, params })
-        this.hint = hint || that.localize({ message, params, hint: true })
+        this.hint = hint || that.localize({ message, params, addon: 'hint' })
+        this.url = url || that.localize({ message, params, addon: 'url' })
         if (validationErrors) this.validationErrors = validationErrors
       }
     }
@@ -99,25 +100,25 @@ class Errors {
     this.Validation = Validation
   }
 
-  localize({ message, params, hint }) {
+  localize({ message, params, addon }) {
     let localized = null
     const defaultLocale = 'en'
     const userLocale = this.$CLS.get('locale')
     const officiallySupportedLocales = ['en', 'nl']
 
-    const codeInLowerCase = codeToLowerCase(message) + (hint ? '.hint' : '')
+    const codeInLowerCase = codeToLowerCase(message) + (addon ? `.${addon}` : '')
 
     try {
       localized = this.$Antl.forLocale(userLocale).formatMessage(`errors.${codeInLowerCase}`, params)
     } catch (e) {
-      if (officiallySupportedLocales.includes(userLocale) && !hint) {
+      if (officiallySupportedLocales.includes(userLocale) && !addon) {
         this.$Raven.captureException(new NE.LogicalException(`No localization for ${message} (${codeInLowerCase}) in '${userLocale}' language`, 500))
       }
 
       try {
         localized = this.$Antl.forLocale(defaultLocale).formatMessage(`errors.${codeInLowerCase}`, params)
       } catch (e2) {
-        if (!hint) this.$Raven.captureException(new NE.LogicalException(`No localization for ${message} (${codeInLowerCase}) in fallback language '${defaultLocale}'`, 500))
+        if (!addon) this.$Raven.captureException(new NE.LogicalException(`No localization for ${message} (${codeInLowerCase}) in fallback language '${defaultLocale}'`, 500))
       }
     }
 
