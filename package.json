@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "A set of adonis providers for various GoAbout apps",
   "author": "Artem Golovin <artem.golovin@goabout.com>",
-  "main": "index.js",
   "license": "MIT",
   "scripts": {
     "start": "npm run autotest",
@@ -13,7 +12,6 @@
     "unlp": "rm -fr node_modules/ && npm i"
   },
   "dependencies": {
-    "chalk": "^2.4.2",
     "cls-hooked": "^4.2.2",
     "co": "^4.6.0",
     "co-each": "^0.1.0",
@@ -33,7 +31,7 @@
     "test": "goabout/"
   },
   "devDependencies": {
-    "@adonisjs/fold": "^4.0.9",
+    "@adonisjs/fold": "^4.0.4",
     "@adonisjs/sink": "^1.0.17",
     "@adonisjs/validator": "^5.0.6",
     "casual": "^1.6.0",
