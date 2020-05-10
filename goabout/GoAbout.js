@@ -304,6 +304,10 @@ class GoAbout {
           eventData: false
         }),
         booking.setEvent({
+          eventType: 'INVOICED',
+          eventData: false
+        }),
+        booking.setEvent({
           eventType: 'CREATED_AT',
           eventData: moment().format('YYYY-MM-DDTHH:mm:ssZ')
         })
