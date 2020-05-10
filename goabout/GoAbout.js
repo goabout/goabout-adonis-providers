@@ -304,7 +304,7 @@ class GoAbout {
           eventData: false
         }),
         booking.setEvent({
-          eventType: 'INVOICED',
+          eventType: 'BILLED',
           eventData: false
         }),
         booking.setEvent({
