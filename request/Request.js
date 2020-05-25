@@ -111,7 +111,7 @@ class Request {
   // Throw error is result is 4xx or 5xx
   throwErrorIfFailingRequest({ response, url, errorHandler, includeOriginalErrorResponse, requestOptions }) {
     if (response.statusCode >= 400) {
-      this.$Log.info(`Failed ${url} (${response.statusCode}) with answer ${JSON.stringify(response.body).slice(0, 5000)}`, { request_url: url, request_method: requestOptions.method, request_query: requestOptions.qs, request_body: requestOptions.body, response_body: response.body, response_status_code: response.statusCode })
+      this.$Log.info(`Failed ${url} (${response.statusCode}) with answer ${ response.body ? JSON.stringify(response.body).slice(0, 5000) : '<Empty body>'}`, { request_url: url, request_method: requestOptions.method, request_query: requestOptions.qs, request_body: requestOptions.body, response_body: response.body, response_status_code: response.statusCode })
 
       let error = null
       const { message, details, hint, validationErrors } = errorHandler ? errorHandler(response) : this.defaultErrorHandler(response)
