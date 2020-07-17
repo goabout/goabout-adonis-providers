@@ -16,7 +16,7 @@
     "co": "^4.6.0",
     "co-each": "^0.1.0",
     "jsonwebtoken": "^8.5.1",
-    "lodash": "^4.17.13",
+    "lodash": "^4.17.19",
     "mixpanel": "^0.10.2",
     "moment": "^2.24.0",
     "node-exceptions": "^4.0.1",
