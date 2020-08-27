@@ -11,4 +11,7 @@ module.exports = {
   CREATED_AT: 'createdAt',
   VALID_FROM: 'validFrom',
   VALID_TILL: 'validTill',
+  RESERVATION: 'reservation',
+  RESERVATION_STATUS: 'reservationStatus',
+  FINISHED_BY: 'finishedBy'
 }

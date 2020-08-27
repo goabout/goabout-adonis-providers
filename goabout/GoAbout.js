@@ -2,6 +2,7 @@ const _ = require('lodash')
 const moment = require('moment')
 
 const GoAboutBooking = require('./GoAboutBooking')
+const GoAboutReservation = require('./GoAboutReservation')
 const GoAboutProduct = require('./GoAboutProduct')
 const GoAboutSubscription = require('./GoAboutSubscription')
 const eventTypes = require('./eventTypes')
@@ -264,7 +265,7 @@ class GoAbout {
     return product
   }
 
-  async createBooking({ product, subscription, productProperties, userProperties, onlyCheck }) {
+  async createBooking({ product, subscription, productProperties, userProperties, onlyCheck, isReservation }) {
     let booking = null
     let bookingResponse = null
 
@@ -275,9 +276,9 @@ class GoAbout {
         body: {
           products: [{
             productHref: product.getLink('self'),
-            properties: productProperties
+            properties: productProperties,
           }],
-          userProperties
+          userProperties,
         }
       })
     } catch (e) {
@@ -300,18 +301,37 @@ class GoAbout {
           eventData: subscription.getLink('self')
         }),
         booking.setEvent({
-          eventType: 'FINISHED',
-          eventData: false
-        }),
-        booking.setEvent({
-          eventType: 'BILLED',
-          eventData: false
-        }),
-        booking.setEvent({
           eventType: 'CREATED_AT',
           eventData: moment().format('YYYY-MM-DDTHH:mm:ssZ')
         })
       ]
+
+
+      if (isReservation) {
+        events.push(...[
+          booking.setEvent({
+            eventType: 'RESERVATION',
+            eventData: true
+          }),
+          booking.setEvent({
+            eventType: 'RESERVATION_STATUS',
+            eventData: 'pending'
+          })
+        ]
+        )
+      } else {
+        events.push(...[
+          booking.setEvent({
+            eventType: 'BILLED',
+            eventData: false
+          }),
+          booking.setEvent({
+            eventType: 'FINISHED',
+            eventData: false
+          })
+        ])
+      }
+
 
       if (this.$Env.get('CREATE_SPECIMEN_USAGES') === 'true') {
         events.push(booking.setEvent({
@@ -326,6 +346,10 @@ class GoAbout {
     return booking
   }
 
+  async createReservation({ product, subscription, productProperties, userProperties, onlyCheck }) {
+    return this.createBooking({ product, subscription, productProperties, userProperties, onlyCheck, isReservation: true })
+  }
+
   async getBooking({ url }) {
     const bookingResponse = await this.$Request.send({ url, token: this.token, useCache: true })
 
@@ -335,6 +359,17 @@ class GoAbout {
     this.$Log.info(`Got booking ${url}`)
 
     return booking
+  }
+
+  async getReservation({ url }) {
+    const reservationResponse = await this.$Request.send({ url, token: this.token, useCache: true })
+
+    // eslint-disable-next-line
+    const reservation = new GoAboutReservation(reservationResponse.halBody, this)
+
+    this.$Log.info(`Got reservation ${url}`)
+
+    return reservation
   }
 
   // TODO Tests
@@ -362,6 +397,32 @@ class GoAbout {
     }
 
     return this.unfinishedBookings
+  }
+
+  async getUnfinishedReservations() {
+    if (!this.unfinishedReservations) {
+      const user = await this.getUser()
+
+      const reservationsResource = await this.request({
+        resource: user,
+        method: 'GET',
+        relation: 'http://rels.goabout.com/user-bookings',
+        query: {
+          eventType: eventTypes.RESERVATION_STATUS,
+          eventData: '"pending"'
+        }
+      })
+
+      const embedResources = reservationsResource.halBody.listEmbedRels()
+      let bareReservations = embedResources.includes('item') ? reservationsResource.halBody.getEmbeds('item') : []
+
+      if (_.isObject(bareReservations) && !_.isArray(bareReservations)) bareReservations = [bareReservations]
+
+      // eslint-disable-next-line
+      this.unfinishedReservations = bareReservations.length ? bareReservations.map(bareReservation => new GoAboutReservation(bareReservation, this)) : bareReservations
+    }
+
+    return this.unfinishedReservations
   }
 
   userValidation() {
