@@ -31,6 +31,7 @@ class GoAboutProduct extends HALResource {
     if (this.internalProperties) {
       Object.assign(sanitizedProduct, {
         provider: this.internalProperties.provider,
+        reservable: this.internalProperties.reservable || false, 
         warning: this.internalProperties.warning || null
       })
     }
