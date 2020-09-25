@@ -14,6 +14,7 @@ class GoAbout {
 
     // GoAbout subclasses
     this.Booking = GoAboutBooking
+    this.Reservation = GoAboutReservation
     this.Subscription = GoAboutSubscription
     this.Product = GoAboutProduct
 
@@ -423,6 +424,36 @@ class GoAbout {
     }
 
     return this.unfinishedReservations
+  }
+
+  // By default returns unfinished ones
+  async getAllReservations({ filter } = {}) {
+    const reservationValuesToGet = filter || ["pending", "active"]
+    const allReservations = []
+
+    await Promise.all(reservationValuesToGet.map(async eventValue => {
+      const reservationsRes = await this.request({
+        useSupertoken: true,
+        relation: 'http://rels.goabout.com/product-bookings',
+        useCache: false,
+        query: {
+          eventType: eventTypes.RESERVATION_STATUS,
+          eventData: `"${eventValue}"`
+        }
+      })
+
+      const embedResources = reservationsRes.halBody.listEmbedRels()
+
+      const bareReservations = embedResources.includes('item') ? reservationsRes.halBody.getEmbeds('item') : []
+
+      if (bareReservations.length) {
+        allReservations.push(...bareReservations.map(bareReservation => new GoAboutReservation(bareReservation, this)))
+      }
+      
+    }))
+
+
+    return allReservations
   }
 
   userValidation() {

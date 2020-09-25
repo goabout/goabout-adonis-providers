@@ -43,7 +43,7 @@ class GoAboutProduct extends HALResource {
       const productImages = this.getEmbed('http://rels.goabout.com/product-images')
 
 
-      // Sometimes coconut (accidentially?) sanitizes products twice. This fix should allow sanitizing as many times as possible without loosing images
+      // Sometimes coconut (accidentally?) sanitizes products twice. This fix should allow sanitizing as many times as possible without loosing images
       if (!productImages.getLinks('items') || !productImages.getLinks('items').length) {
         productImages.addLinks('items', productImages.getLinks('item'))
         productImages.removeLinks('item')
