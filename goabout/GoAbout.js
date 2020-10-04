@@ -131,10 +131,18 @@ class GoAbout {
     const embeddedUser = api.getEmbed('http://rels.goabout.com/authenticated-user')
 
     this.user = (fresh && embeddedUser && embeddedUser.getLink('self')) ? await this.getUser({ url: embeddedUser.getLink('self'), fresh }) : embeddedUser
+    if (!this.user) return null
 
-    if (this.user) {
+    this.user.id = this.getResourceId({ resource: this.user })
+    this.user.superuser = !!api.getLink('http://rels.goabout.com/agencies')
+
+    if (this.userId && `${this.user.id}` !== `${this.userId}`) {
+      this.$Log.info(`Impersonating user #${this.userId} under user ${this.user.id}`)
+      this.user = await this.getUser({ url: `${api.getLink('self')}user/${this.userId}`, fresh })
       this.user.id = this.getResourceId({ resource: this.user })
-      if (api.getLink('http://rels.goabout.com/agencies')) this.user.superuser = true
+      this.user.superuser = !!api.getLink('http://rels.goabout.com/agencies')
+    } else {
+      this.userId = this.user.id
     }
 
 
