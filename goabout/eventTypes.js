@@ -13,5 +13,6 @@ module.exports = {
   VALID_TILL: 'validTill',
   RESERVATION: 'reservation',
   RESERVATION_STATUS: 'reservationStatus',
-  FINISHED_BY: 'finishedBy'
+  FINISHED_BY: 'finishedBy',
+  CANCELLED_AT: 'cancelledAt',
 }
