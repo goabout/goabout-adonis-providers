@@ -15,4 +15,5 @@ module.exports = {
   RESERVATION_STATUS: 'reservationStatus',
   FINISHED_BY: 'finishedBy',
   CANCELLED_AT: 'cancelledAt',
+  KEYS_REQUESTED_AT: 'keysRequestedAt',
 }
