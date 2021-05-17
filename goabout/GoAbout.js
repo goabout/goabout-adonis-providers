@@ -149,6 +149,17 @@ class GoAbout {
     return this.user
   }
 
+  async getMandate({ fresh }) {
+    const user = await this.getSelfUser({ fresh })
+
+    const response = await this.request({
+      resource: user,
+      relation: 'http://rels.goabout.com/user-mandate'
+    })
+
+    return response.halBody
+  }
+
   async getUserProperties({ requestedProperties } = {}) {
     if (this.$userProperties) return this.$userProperties
 
@@ -457,7 +468,7 @@ class GoAbout {
       if (bareReservations.length) {
         allReservations.push(...bareReservations.map(bareReservation => new GoAboutReservation(bareReservation, this)))
       }
-      
+
     }))
 
 
