@@ -12,7 +12,6 @@
     "unlp": "rm -fr node_modules/ && npm i"
   },
   "dependencies": {
-    "cls-hooked": "^4.2.2",
     "co": "^4.6.0",
     "co-each": "^0.1.0",
     "jsonwebtoken": "^8.5.1",

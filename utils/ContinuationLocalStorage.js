@@ -1,23 +1,28 @@
-const { createNamespace } = require('cls-hooked')
+const { AsyncLocalStorage } = require('async_hooks')
 const uuid = require('uuid/v4')
 
-const namespaceId = uuid()
-const session = createNamespace(namespaceId)
+const asyncLocalStorage = new AsyncLocalStorage()
 
 class ContinuationLocalStorage {
   set(type, value) {
-    return session.set(type, value)
+    const store = asyncLocalStorage.getStore()
+    store.type = value
   }
 
   get(type) {
-    return session.get(type)
+    const store = asyncLocalStorage.getStore()
+    return store[type]
+  }
+
+  discharge() {
+    asyncLocalStorage.disable()
   }
 }
 
 class ContinuationLocalStorageMiddleware {
   async handle(ctx, next) {
-    await session.runPromise(async () => {
-      session.set('session', uuid().split('-')[4])
+    await asyncLocalStorage.run({}, async () => {
+      asyncLocalStorage.set('session', uuid().split('-')[4])
       await next()
     })
   }
