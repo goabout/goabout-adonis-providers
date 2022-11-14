@@ -18,14 +18,18 @@ class HALResourceWithRoutes extends HALResource {
   }
 
   init({ request, ignoreBrokenInit } = {}) {
+    this[$].host = this.$getHost({ request, ignoreMissing: ignoreBrokenInit })
+  }
+
+  $getHost({ request, ignoreMissing } = {}) {
     const host = request ? (request.header('x-forwarded-host') || request.header('host')) : this[$].CLS.get('request.host')
     const protocol = request ? request.header('x-forwarded-proto') : this[$].CLS.get('request.protocol')
 
-    if (!ignoreBrokenInit && (!host || !protocol)) {
+    if (!ignoreMissing && (!host || !protocol)) {
       throw new this[$].Errors.Crash('E_NO_HOSTNAME_FOUND')
     }
 
-    this[$].host = `${protocol}://${host}`
+    return `${protocol}://${host}`
   }
 
 
@@ -47,7 +51,7 @@ class HALResourceWithRoutes extends HALResource {
 
     if (!ignoreMissingProps) this.$crashIfMissingProps({ path, templateOrPath })
 
-    return skipRoot ? path : (this[$].host + path)
+    return skipRoot ? path : (this.$getHost() + path)
   }
 
   $getRequiredProperties({ path }) {

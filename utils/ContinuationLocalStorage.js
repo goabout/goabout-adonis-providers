@@ -6,12 +6,21 @@ const asyncLocalStorage = new AsyncLocalStorage()
 class ContinuationLocalStorage {
   set(type, value) {
     const store = asyncLocalStorage.getStore()
-    store.type = value
+    if (store) {
+      store[type] = value
+    } else {
+      // eslint-disable-next-line no-console
+      console.error('CLS was not found')
+    }
   }
 
   get(type) {
     const store = asyncLocalStorage.getStore()
-    return store[type]
+    return store ? store[type] : undefined
+  }
+
+  getAll() {
+    return asyncLocalStorage.getStore() || {}
   }
 
   discharge() {
@@ -21,8 +30,11 @@ class ContinuationLocalStorage {
 
 class ContinuationLocalStorageMiddleware {
   async handle(ctx, next) {
-    await asyncLocalStorage.run({}, async () => {
-      asyncLocalStorage.set('session', uuid().split('-')[4])
+    const clsRes = {
+      session: uuid().split('-')[4]
+    }
+
+    await asyncLocalStorage.run(clsRes, async () => {
       await next()
     })
   }
