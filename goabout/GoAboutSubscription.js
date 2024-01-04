@@ -46,11 +46,12 @@ class GoAboutSubscription extends GoAboutProduct {
     return productToReturn
   }
 
-  async end() {
+  async end({ useSupertoken } = {}) {
     const response = await this.$GoAbout.request({
       resource: this,
       relation: 'subscription',
       method: 'PUT',
+      useSupertoken,
       body: {
         properties: this.properties,
         validUntil: moment().subtract(5, 'minutes').toISOString()

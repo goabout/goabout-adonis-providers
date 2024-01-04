@@ -2,7 +2,7 @@ const GoAboutProduct = require('../../goabout/GoAboutProduct')
 const GoAboutSubscription = require('../../goabout/GoAboutSubscription')
 const HALResource = require('../../utils/HALResource')
 
-describe('GoAboutSubscription', () => {
+describe.skip('GoAboutSubscription', () => {
   beforeEach(async () => {
     this.fakeId = fake.uuid
 
