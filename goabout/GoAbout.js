@@ -113,6 +113,22 @@ class GoAbout {
     return response.halBody
   }
 
+  async getUserByAuth0Id({ auth0Id }) {
+    const supertoken = await this.$Auth0.getToken()
+    const token = await this.$Auth0.getToken()
+
+    const userResponse = await this.$Request.send({
+      url: this.$Env.get('GOABOUT_API')+'user-by-auth0-id/'+auth0Id,
+      token,
+    })
+
+    if (!userResponse.halBody) throw new this.$Errors.Crash('E_FAILED_TO_GET_USER')
+
+    this.$Log.info(`Got user ${userResponse.halBody.auth0Id}`)
+
+    return userResponse.halBody || null
+  }
+
   // If no url, getting self
   async getUser({ url, fresh } = {}) {
     if (!url) return this.getSelfUser({ fresh })
@@ -160,10 +176,10 @@ class GoAbout {
     return response.halBody
   }
 
-  async getUserProperties({ requestedProperties } = {}) {
+  async getUserProperties({ passedUser, requestedProperties } = {}) {
     if (this.$userProperties) return this.$userProperties
 
-    const user = await this.getUser()
+    const user = passedUser || await this.getUser()
     const userWithSupertokenRes = await await this.request({
       resource: user,
       relation: 'self',
@@ -178,6 +194,7 @@ class GoAbout {
     if (userWithSupertoken.email) userProperties.email = userWithSupertoken.email
     if (userWithSupertoken.name) userProperties.name = userWithSupertoken.name
     if (userWithSupertoken.phonenumber) userProperties.phonenumber = userWithSupertoken.phonenumber
+    if (userWithSupertoken.mollieUserId) userProperties.mollieUserId = userWithSupertoken.mollieUserId
 
     // Filter out not requested props
     if (requestedProperties && requestedProperties.length) {
@@ -190,9 +207,9 @@ class GoAbout {
     return userProperties
   }
 
-  async setUserProperties({ properties } = {}) {
-    const user = await this.getUser()
-    const currentProperties = await this.getUserProperties()
+  async setUserProperties({ passedUser, properties } = {}) {
+    const user = passedUser || await this.getUser()
+    const currentProperties = await this.getUserProperties({ passedUser })
 
     const propsToSave = Object.assign({}, currentProperties, properties)
     const requestBody = { properties: propsToSave }
@@ -213,6 +230,11 @@ class GoAbout {
       delete propsToSave.name
     }
 
+    if (properties.mollieUserId !== undefined) {
+      requestBody.mollieUserId = propsToSave.mollieUserId
+      delete propsToSave.mollieUserId
+    }
+
     await this.request({
       resource: user,
       relation: 'self',
@@ -227,11 +249,11 @@ class GoAbout {
     return true
   }
 
-  async getUserSubscriptions() {
+  async getUserSubscriptions({ userUrl } = {}) {
     if (!this.$subscriptions) {
       let response = null
 
-      const user = await this.getUser()
+      const user = await this.getUser({ url: userUrl })
 
       response = await this.request({
         resource: user,
@@ -273,6 +295,15 @@ class GoAbout {
     return this.activeSubscription
   }
 
+  async deleteResource({ resource }) {
+    response = await this.request({
+      resource,
+      relation: 'self',
+      method: 'DELETE',
+      useSupertoken: true // To get internal properties of product
+    })
+  }
+
   // Not dependent on user
   async getProductOrSubscription({ id, url }) {
     if (!url) url = await this.generateProductHref(id) // eslint-disable-line
@@ -283,6 +314,36 @@ class GoAbout {
     this.$Log.info(`Got product/subscription ${url}`)
 
     return product
+  }
+
+  async addSubscriptionToUser({ userUrl, subscriptionId, properties }) {
+    const subscriptionHref = await this.generateProductHref(subscriptionId)
+    const user = await this.getUser({ url: userUrl })
+
+    const goAboutUserSubscriptions = await this.getUserSubscriptions({ userUrl: userUrl }) || []
+    const activeSubscriptions = goAboutUserSubscriptions.filter(subscription => !subscription.validUntil)
+    const existingSubscription = activeSubscriptions.find(subscription => subscription.id === subscriptionId)
+
+
+    if (existingSubscription) {
+      this.$Log.error(`Subscription ${subscriptionId} already exists for user ${userUrl}`)
+      throw new this.$Errors.BadRequest({ message: 'E_GOABOUT_SUBSCRIPTION_ALREADY_EXISTS', details: 'User already has this subscription' })
+    }
+
+    this.$Log.info(`Adding subscription ${subscriptionHref} to user ${userUrl}`)
+
+    const response = await this.request({
+      resource: user,
+      relation: 'http://rels.goabout.com/subscriptions',
+      useSupertoken: true,
+      method: 'POST',
+      body: {
+        productHref: subscriptionHref,
+        properties
+      }
+    })
+
+    return response.halBody
   }
 
   async createBooking({ product, subscription, productProperties, userProperties, onlyCheck, isReservation }) {
@@ -329,15 +390,15 @@ class GoAbout {
 
       if (isReservation) {
         events.push(...[
-          booking.setEvent({
-            eventType: 'RESERVATION',
-            eventData: true
-          }),
-          booking.setEvent({
-            eventType: 'RESERVATION_STATUS',
-            eventData: 'pending'
-          })
-        ]
+            booking.setEvent({
+              eventType: 'RESERVATION',
+              eventData: true
+            }),
+            booking.setEvent({
+              eventType: 'RESERVATION_STATUS',
+              eventData: 'pending'
+            })
+          ]
         )
       } else {
         events.push(...[
