@@ -118,7 +118,7 @@ class GoAbout {
     const token = await this.$Auth0.getToken()
 
     const userResponse = await this.$Request.send({
-      url: this.$Env.get('GOABOUT_API')+'user-by-auth0-id/'+auth0Id,
+      url: `${this.$Env.get('GOABOUT_API')}user-by-auth0-id/${auth0Id}`,
       token,
     })
 
@@ -176,15 +176,14 @@ class GoAbout {
     return response.halBody
   }
 
-  async getUserWallet({ passedUser } = {})  {
+  async getUserWallet({ passedUser } = {}) {
     const user = passedUser || await this.getUser()
 
-    if (user.properties.wallet) {
+    if (user.properties.wallet !== undefined) {
       return user.properties.wallet
-    } else {
-      await this.setUserProperties({ passedUser: user, properties: { wallet: 0 }})
-      return 0
     }
+    await this.setUserProperties({ passedUser: user, properties: { wallet: 0 } })
+    return 0
   }
 
   async getUserProperties({ passedUser, requestedProperties } = {}) {
@@ -331,7 +330,7 @@ class GoAbout {
     const subscriptionHref = await this.generateProductHref(subscriptionId)
     const user = await this.getUser({ url: userUrl })
 
-    const goAboutUserSubscriptions = await this.getUserSubscriptions({ userUrl: userUrl }) || []
+    const goAboutUserSubscriptions = await this.getUserSubscriptions({ userUrl }) || []
     const activeSubscriptions = goAboutUserSubscriptions.filter(subscription => !subscription.validUntil)
     const existingSubscription = activeSubscriptions.find(subscription => subscription.id === subscriptionId)
 
@@ -401,15 +400,15 @@ class GoAbout {
 
       if (isReservation) {
         events.push(...[
-            booking.setEvent({
-              eventType: 'RESERVATION',
-              eventData: true
-            }),
-            booking.setEvent({
-              eventType: 'RESERVATION_STATUS',
-              eventData: 'pending'
-            })
-          ]
+          booking.setEvent({
+            eventType: 'RESERVATION',
+            eventData: true
+          }),
+          booking.setEvent({
+            eventType: 'RESERVATION_STATUS',
+            eventData: 'pending'
+          })
+        ]
         )
       } else {
         events.push(...[
@@ -519,7 +518,7 @@ class GoAbout {
 
   // By default returns unfinished ones
   async getAllReservations({ filter } = {}) {
-    const reservationValuesToGet = filter || ["pending", "active"]
+    const reservationValuesToGet = filter || ['pending', 'active']
     const allReservations = []
 
     await Promise.all(reservationValuesToGet.map(async eventValue => {
@@ -540,7 +539,6 @@ class GoAbout {
       if (bareReservations.length) {
         allReservations.push(...bareReservations.map(bareReservation => new GoAboutReservation(bareReservation, this)))
       }
-
     }))
 
 
