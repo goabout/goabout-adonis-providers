@@ -176,6 +176,17 @@ class GoAbout {
     return response.halBody
   }
 
+  async getUserWallet({ passedUser } = {})  {
+    const user = passedUser || await this.getUser()
+
+    if (user.properties.wallet) {
+      return user.properties.wallet
+    } else {
+      await this.setUserProperties({ passedUser: user, properties: { wallet: 0 }})
+      return 0
+    }
+  }
+
   async getUserProperties({ passedUser, requestedProperties } = {}) {
     if (this.$userProperties) return this.$userProperties
 
